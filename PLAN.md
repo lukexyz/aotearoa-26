@@ -25,16 +25,17 @@ Decisions already made:
 - [x] Placeholder `site/index.html` list view
 - [x] Verified locally: 11 days, 11 stops, 21 places, bookings absent
 
-## Phase 1 — Live on GitHub Pages
+## Phase 1 — Live on GitHub Pages  🟡 Claude's half done 2026-09-02
 
 Goal: a URL that exists, rebuilds from the CSVs, and proves the Action works
 before the sheet is involved.
 
 Claude:
-- [ ] `git init`, first commit, `gh repo create lukexyz/aotearoa-26 --public`
-- [ ] Set Pages source to GitHub Actions via `gh api`
-- [ ] Push, watch the first run, confirm the placeholder is live
-- [ ] Add `--check` to `fetch_sheet.py`: fail the build with a readable message
+- [x] `git init`, first commit, `gh repo create lukexyz/aotearoa-26 --public`
+- [x] Set Pages source to GitHub Actions via `gh api`
+- [x] Push, watch the first run, confirm the placeholder is live at
+      https://lukexyz.github.io/aotearoa-26/
+- [x] Add `--check` to `fetch_sheet.py`: fail the build with a readable message
       if a `from`/`to`/`place` name isn't in `places`, if `day` isn't an
       integer, or if a tab is missing. Sheet typos should break the build
       loudly, not render a blank map.

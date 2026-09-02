@@ -1,5 +1,7 @@
 # Aotearoa 2026 — South Island road trip
 
+Live at https://lukexyz.github.io/aotearoa-26/ (placeholder list view until Phase 2 lands).
+
 Eleven days, Christchurch loop, six of us. October–November 2026.
 
 The itinerary lives in a shared Google Sheet. This repo turns it into a website
