@@ -1,6 +1,6 @@
 # Aotearoa 2026 — South Island road trip
 
-Live at https://lukexyz.github.io/aotearoa-26/ (placeholder list view until Phase 2 lands).
+Live at https://lukexyz.github.io/aotearoa-26/
 
 Eleven days, Christchurch loop, six of us. October–November 2026.
 
@@ -9,9 +9,10 @@ on GitHub Pages. Edit the sheet, and the site rebuilds itself overnight, or
 straight away from the **Actions → Build from Google Sheet and deploy → Run
 workflow** button.
 
-Addresses, confirmation numbers and anything else you wouldn't want on the
-open web stay in the sheet's `bookings` tab, which is never exported. The site
-shows the town we're sleeping in and links back to the sheet for the rest.
+Addresses, confirmation numbers, flight bookings and anything else you wouldn't
+want on the open web stay in the sheet's `bookings` and `flights` tabs, which
+are never exported. The site shows the town we're sleeping in and links back to
+the sheet for the rest.
 
 ## How it fits together
 
@@ -29,7 +30,7 @@ secrets aren't configured.
 
 ## One-time setup
 
-1. **Create the sheet** with the four tabs in `SHEET_SCHEMA.md`. Quickest way:
+1. **Create the sheet** with the tabs in `SHEET_SCHEMA.md`. Quickest way:
    import each `data/*.csv` into a tab of the same name, then share the sheet
    with the travellers.
 2. **Create a service account** (a robot Google account the Action logs in as):
@@ -53,9 +54,26 @@ python scripts/fetch_sheet.py --local     # or without --local, with SHEET_ID an
                                           # GOOGLE_SERVICE_ACCOUNT_JSON in the env
 python scripts/fetch_sheet.py --check     # validate the sheet without writing anything;
                                           # names the cell for any typo it finds
+python scripts/fetch_sheet.py --dump      # copy the sheet's exported tabs back into data/*.csv
 python scripts/build.py
 python -m http.server -d dist 8000        # open http://localhost:8000
 ```
+
+The sheet is the source of truth. `data/*.csv` is a snapshot of it, refreshed
+with `--dump`, and is what CI builds from if the sheet secrets are missing.
+
+## The page
+
+One file, `site/index.html`. Leaflet map with a basemap switcher (satellite,
+CARTO Light, Voyager, OpenTopoMap; the choice is remembered per browser).
+Overview shows the whole loop with a pin per town; each day shows the drive,
+numbered pins for the stops that have a `place`, tonight's town with a halo,
+and photo cards on the right. Below 760px the map sits on top and the rest
+scrolls underneath. `#day-7` in the URL opens that day; during the trip the
+page opens on today.
+
+Nothing about the South Island is written into the HTML. Change the sheet and
+the map follows.
 
 The nightly cron runs at 02:00 NZDT. Adjust the schedule in
 `.github/workflows/build.yml` if that's the wrong time.

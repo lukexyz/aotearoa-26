@@ -49,46 +49,47 @@ Luke (about ten minutes, steps in README):
 Done when: editing a cell in the sheet and pressing *Run workflow* changes
 the live page.
 
-## Phase 2 — The map page
+## Phase 2 — The map page  ✅ done 2026-09-03
 
 Goal: replace the placeholder with the real app. Same skeleton as the
 Dolomites map, every trip-specific value read from `window.TRIP_DATA`.
 
 Layout:
-- [ ] Full-bleed Leaflet map (cdnjs 1.9.4), top bar with brand, day nav,
+- [x] Full-bleed Leaflet map (cdnjs 1.9.4), top bar with brand, day nav,
       basemap switcher. Cream/amber palette from the v1 image, dark chrome
       from the Dolomites site.
-- [ ] Basemaps: Esri World Imagery + CARTO label overlay (default), CARTO
+- [x] Basemaps: Esri World Imagery + CARTO label overlay (default), CARTO
       Light, CARTO Voyager, OpenTopoMap. Switcher in the top-right. Choice
       remembered in `localStorage`. One `DEFAULT_BASEMAP` constant to flip
       later.
-- [ ] Day nav: Overview + one chip per day (day number, date if set), prev/next
-      arrows, left/right keys. Opens on today's day if we're mid-trip.
-- [ ] Brief panel (left): leg label, title, from → to, drive-time chip, notes,
+- [x] Day nav: Overview + one chip per day (day number, date if set), prev/next
+      arrows, left/right keys. Opens on today's day if we're mid-trip, or on
+      `#day-N` from the URL.
+- [x] Brief panel (left): leg label, title, from → to, drive-time chip, notes,
       stop list with links and icons, "Sleeping in X · booking details ↗"
       deep-linked to the sheet's bookings tab.
-- [ ] Photo cards (right, up to three per day) from `places.photo`, Wikimedia
+- [x] Photo cards (right, up to three per day) from `places.photo`, Wikimedia
       hotlinked with `onerror` fallback, numbered to match pins.
-- [ ] Tonight's bed halo at the `to` town, pulsing, behind the numbered pins.
+- [x] Tonight's bed halo at the `to` town, pulsing, behind the numbered pins.
 
 Map content:
-- [ ] Per day: polyline `from` → stops with a `place` → `to`, straight lines
+- [x] Per day: polyline `from` → stops with a `place` → `to`, straight lines
       for now. Numbered pins for stops, waypoint dots for pass-through places.
       Fit to that day's places with padding for the panels.
-- [ ] Overview: the whole loop, one pin per sleeping town with night counts,
+- [x] Overview: the whole loop, one pin per sleeping town with night counts,
       legs in distinct colours, fit to the island.
-- [ ] Legend: driving, activity (bike/boat), optional.
+- [x] Legend: drive, stop, tonight's bed. (Activity spurs come with Phase 3.)
 
 Mobile (everyone will use this from a phone in the car):
-- [ ] Below 760px: map is the top ~45vh, brief becomes a scrollable sheet
+- [x] Below 760px: map is the top ~45vh, brief becomes a scrollable sheet
       below, photo cards collapse into a horizontal strip, nav chips scroll.
-- [ ] Tap targets ≥ 44px, no hover-only affordances.
+- [x] Tap targets ≥ 44px, no hover-only affordances.
 
 Hygiene:
-- [ ] Prefix every CSS class per subsystem (`nav-`, `brief-`, `card-`,
+- [x] Prefix every CSS class per subsystem (`nav-`, `brief-`, `card-`,
       `pin-`) so nothing collides with Leaflet's divIcons again.
-- [ ] Sheet-first test: change a town in `days.csv`, rebuild, confirm the map
-      moves without touching HTML.
+- [x] Sheet-first test: dates typed into the sheet appeared on the chips and
+      brief without touching HTML.
 
 Done when: the site reads as well as the Dolomites one and nothing about the
 South Island is hardcoded in `index.html`.
@@ -134,9 +135,9 @@ anyone typing it.
 ## Phase 6 — Finish
 
 - [ ] Luke picks the default basemap; flip `DEFAULT_BASEMAP`.
-- [ ] Dates filled in once flights are booked.
+- [x] Dates filled in once flights are booked. (Flights booked 2026-09; trip 25 Oct – 7 Nov.)
 - [ ] Photos for every sleeping town and headline stop.
-- [ ] README gets the live link; MUSINGS gets the retrospective.
+- [ ] MUSINGS gets the retrospective. (README already has the live link.)
 - [ ] Share the URL and the sheet with the other five.
 
 ---

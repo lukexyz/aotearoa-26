@@ -3,16 +3,20 @@
 Two ways to run it:
 
     # 1. Create a brand-new sheet in *your* Drive, seed it, share it with the
-    #    service account as Viewer. Uses gcloud application-default credentials:
-    #    gcloud auth application-default login --scopes=.../spreadsheets,.../drive,.../cloud-platform
+    #    service account. Uses gcloud application-default credentials, which in
+    #    practice (2026-09) no longer get Sheets scope, so this path is parked:
+    #    make the sheet by hand at sheets.new, share it with the robot as Editor,
+    #    and use mode 2 instead.
     python scripts/seed_sheet.py --create "Aotearoa 2026" --share trip-site-reader@aotearoa-26.iam.gserviceaccount.com
 
     # 2. Re-seed an existing sheet using the service account key (the sheet
     #    must be shared with the service account as Editor for this to work).
     python scripts/seed_sheet.py <sheet id or url> [--key service-account.json]
 
-Existing tabs with the same names are cleared and rewritten, other tabs are
-left alone.
+Existing exported tabs (days, stops, places) are cleared and rewritten. The
+private tabs (bookings, flights) are only created if missing; if they already
+hold rows they are left alone, because the CSV copies are placeholders and the
+sheet is the only place the real ones live.
 """
 from __future__ import annotations
 
@@ -28,7 +32,8 @@ import gspread
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
-TABS = ["days", "stops", "places", "bookings"]
+TABS = ["days", "stops", "places", "bookings", "flights"]
+PRIVATE = {"bookings", "flights"}
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
 
 
@@ -57,6 +62,9 @@ def seed(book: gspread.Spreadsheet) -> None:
             rows = list(csv.reader(f))
         if name in existing:
             ws = existing[name]
+            if name in PRIVATE and len(ws.get_all_values()) > 1:
+                print(f"{name}: has real rows, left alone")
+                continue
             ws.clear()
         else:
             ws = book.add_worksheet(name, rows=max(len(rows) + 20, 50), cols=len(rows[0]) + 2)

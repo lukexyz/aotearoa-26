@@ -1,0 +1,2 @@
+who,leg,flight,from,to,depart,arrive,bag,class,booking_ref,booked_with,notes
+Sample,out,XX1,AAA,CHC,2026-10-24 10:00,2026-10-25 14:00,,,NOT EXPORTED - real rows live only in the sheet,,

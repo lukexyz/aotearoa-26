@@ -1,17 +1,17 @@
 # Google Sheet schema
 
-One spreadsheet, four tabs. Tab names must match exactly (lowercase).
+One spreadsheet, five tabs. Tab names must match exactly (lowercase).
 Row 1 is the header row. Empty rows are ignored.
 
-Only `days`, `stops` and `places` are exported to the website. `bookings` never leaves
-the sheet; the site links back to it instead.
+Only `days`, `stops` and `places` are exported to the website. `bookings` and
+`flights` never leave the sheet; the site links back to it instead.
 
 ## `days`  (exported)
 
 | column       | example                          | notes                                    |
 |--------------|----------------------------------|------------------------------------------|
 | day          | 7                                | integer, drives ordering                 |
-| date         | 2026-10-30                       | ISO date, or leave blank until fixed     |
+| date         | 2026-10-30                       | plain text `YYYY-MM-DD`. Only day 1 is needed; blanks after it are derived (day number + start date) |
 | title        | Te Anau to Franz Josef           | short heading                            |
 | leg          | West Coast                       | groups days into sections on the page    |
 | from         | Te Anau                          | town we wake up in                       |
@@ -62,3 +62,26 @@ numbers at the top of the popup. Accuracy to a few hundred metres is plenty.
 
 The site shows "Queenstown" for that day and a button that deep-links to this
 tab, so the address is only ever visible to people the sheet is shared with.
+
+## `flights`  (private, NOT exported)
+
+One row per flight leg per booking. Six people may arrive on different
+planes, so `who` says whose booking it is.
+
+| column      | example              | notes                                  |
+|-------------|----------------------|----------------------------------------|
+| who         | Luke & Rebecca       |                                        |
+| leg         | out / back           |                                        |
+| flight      | EK412                |                                        |
+| from        | DXB Dubai            |                                        |
+| to          | CHC Christchurch     |                                        |
+| depart      | 2026-10-24 10:10     | local time at the departure airport    |
+| arrive      | 2026-10-25 13:55     | local time at the arrival airport      |
+| bag         | 30kg                 |                                        |
+| class       | Economy              |                                        |
+| booking_ref | (agent's reference)  |                                        |
+| booked_with | Skywings Travel      |                                        |
+| notes       | Be at CHC by 15:30   |                                        |
+
+Passport numbers and dates of birth don't belong here either; the sheet is
+shared with the whole group. Keep those in whatever you'd normally keep them in.

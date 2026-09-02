@@ -4,6 +4,7 @@ Usage:
     python scripts/fetch_sheet.py            # reads the sheet, needs env vars below
     python scripts/fetch_sheet.py --local    # reads data/*.csv, no credentials needed
     python scripts/fetch_sheet.py --check    # validate only, write nothing (add --local to check the CSVs)
+    python scripts/fetch_sheet.py --dump     # refresh data/*.csv from the sheet (exported tabs only)
 
 Validation always runs. A typo in the sheet (a town that isn't in `places`, a
 day number that isn't a number) exits non-zero with a message naming the cell,
@@ -14,8 +15,14 @@ Env vars for sheet mode:
     GOOGLE_SERVICE_ACCOUNT_JSON  full JSON of a service-account key (the sheet must
                                  be shared with that account's email, viewer is enough)
 
-Only the tabs in EXPORT_TABS are read. The `bookings` tab is deliberately not
-in that list, so addresses and confirmation numbers never reach the website.
+Only the tabs in EXPORT_TABS are read. The private tabs (`bookings`, `flights`)
+are deliberately not in that list, so addresses, confirmation numbers and
+passenger details never reach the website, and `--dump` never writes them to
+disk either.
+
+Dates: only `days.date` on the first day needs filling in. Blank dates on later
+days are derived from the nearest earlier date plus the day-number difference,
+so inserting a day in the sheet doesn't mean retyping every date after it.
 """
 from __future__ import annotations
 
@@ -25,6 +32,7 @@ import difflib
 import json
 import os
 import sys
+from datetime import date, timedelta
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -32,7 +40,7 @@ DATA_DIR = ROOT / "data"
 OUT_FILE = ROOT / "site" / "data.json"
 
 EXPORT_TABS = ["days", "stops", "places"]
-PRIVATE_TABS = ["bookings"]
+PRIVATE_TABS = ["bookings", "flights"]   # never read, never written
 
 
 def clean(rows: list[dict]) -> list[dict]:
@@ -83,6 +91,20 @@ def read_sheet() -> dict[str, list[dict]]:
     except gspread.WorksheetNotFound:
         tabs["_bookings_gid"] = 0
     return tabs
+
+
+def dump_local(tabs: dict) -> None:
+    """Write the exported tabs to data/*.csv, header order as in the sheet. Private tabs are never touched."""
+    for name in EXPORT_TABS:
+        rows = tabs[name]
+        if not rows:
+            continue
+        path = DATA_DIR / f"{name}.csv"
+        with path.open("w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=list(rows[0]), lineterminator="\n")
+            w.writeheader()
+            w.writerows(rows)
+        print(f"wrote {path.relative_to(ROOT)}: {len(rows)} rows")
 
 
 def cell(rows: list[dict], row: int, col: str) -> str:
@@ -166,6 +188,10 @@ def validate(tabs: dict) -> list[str]:
         if n in day_numbers:
             problems.append(f"days!{cell(days, i, 'day')}: day {n} is also on row {day_numbers[n] + 1}")
         day_numbers[n] = i
+        raw_date = d.get("date", "")
+        if raw_date and parse_date(raw_date) is None:
+            problems.append(f"days!{cell(days, i, 'date')}: date is '{raw_date}', expected 2026-10-25 style "
+                            f"(format the column as plain text so Sheets doesn't localise it)")
         for col in ("from", "to"):
             v = d.get(col, "")
             if v:
@@ -190,8 +216,28 @@ def validate(tabs: dict) -> list[str]:
     return problems
 
 
+def parse_date(raw: str) -> date | None:
+    try:
+        return date.fromisoformat(raw)
+    except ValueError:
+        return None
+
+
+def fill_dates(days: list[dict]) -> None:
+    """Derive blank dates from the nearest earlier dated day. Sorted input, mutates in place."""
+    anchor: tuple[int, date] | None = None
+    for d in days:
+        n = int(d["day"])
+        got = parse_date(d.get("date", ""))
+        if got:
+            anchor = (n, got)
+        elif anchor:
+            d["date"] = (anchor[1] + timedelta(days=n - anchor[0])).isoformat()
+
+
 def shape(tabs: dict) -> dict:
     days = sorted(tabs["days"], key=lambda d: int(d.get("day") or 0))
+    fill_dates(days)
     stops_by_day: dict[str, list[dict]] = {}
     for s in tabs["stops"]:
         stops_by_day.setdefault(s.get("day", ""), []).append(s)
@@ -209,7 +255,10 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--local", action="store_true", help="read data/*.csv instead of the sheet")
     ap.add_argument("--check", action="store_true", help="validate only, don't write data.json")
+    ap.add_argument("--dump", action="store_true", help="write the exported tabs back to data/*.csv")
     args = ap.parse_args()
+    if args.dump and args.local:
+        ap.error("--dump reads the sheet; drop --local")
 
     tabs = read_local() if args.local else read_sheet()
 
@@ -221,6 +270,9 @@ def main() -> None:
         sys.exit(1)
     if args.check:
         print(f"ok: {len(tabs['days'])} days, {len(tabs['stops'])} stops, {len(tabs['places'])} places")
+        return
+    if args.dump:
+        dump_local(tabs)
         return
 
     payload = shape(tabs)

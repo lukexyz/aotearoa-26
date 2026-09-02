@@ -92,7 +92,7 @@ column ever appears in the `days` tab. Belt and braces against someone
 | `data/*.csv`                  | local copy of the sheet, and the CI fallback      |
 | `scripts/fetch_sheet.py`      | sheet or CSV → `site/data.json`                   |
 | `scripts/build.py`            | `site/` + data → `dist/`                          |
-| `site/index.html`             | the page. Placeholder list view for now.          |
+| `site/index.html`             | the page: Leaflet map, day nav, brief, cards      |
 | `.github/workflows/build.yml` | nightly + manual build and Pages deploy           |
 | `PLAN.md`                     | phased build plan, ticked off as work lands       |
 | `scripts/seed_sheet.py`       | one-off: CSVs → sheet tabs (robot key, Editor)    |
@@ -155,8 +155,7 @@ page changes. Then reverted.
 
 ### Sheet content todos (anyone)
 
-- [ ] Dates, once flights are booked. Keep the column as plain text
-      `2026-10-24` so it survives locale formatting.
+- [x] Dates: in the sheet, 25 Oct to 4 Nov. Only day 1 strictly needs one now.
 - [ ] Decide days 1 and 2: straight to Wanaka (current, v1) or two
       Christchurch nights first. Open question 3 above.
 - [ ] `places.photo`: a Wikimedia Commons filename per sleeping town at
@@ -169,15 +168,11 @@ page changes. Then reverted.
 
 ### Code todos (Claude)
 
-- [ ] **Phase 2, the map page.** Full-bleed satellite, basemap switcher,
-      day nav, brief panel, photo cards, bed halo, mobile layout. Everything
-      read from `window.TRIP_DATA`, nothing South Island-specific in the
-      HTML. See PLAN.md for the full list.
-- [ ] `fetch_sheet.py --dump` to refresh `data/*.csv` from the sheet.
+- [x] **Phase 2, the map page.** Shipped 2026-09-03, see below.
+- [x] `fetch_sheet.py --dump` to refresh `data/*.csv` from the sheet.
 - [ ] Bump `actions/checkout` and `actions/setup-python` off Node 20 when
       next touching the workflow.
-- [ ] `seed_sheet.py --create` (the ADC path) is dead weight now; either
-      delete it or leave it with a comment saying why it's unused.
+- [x] `seed_sheet.py --create` left in place with a comment saying why it's parked.
 - [ ] Phases 3 to 6 per PLAN.md: OSRM road routes, weather and countdown,
       offline PWA, final basemap pick.
 
@@ -189,3 +184,65 @@ page changes. Then reverted.
   what keeps bookings private.
 - The robot key is in the repo secret and on this disk. Rotate it from the
   Cloud console if it ever leaks; `gh secret set` takes the new file.
+
+## 2026-09-03: Phase 2, the page itself
+
+`site/index.html` is now the real thing: the Dolomites skeleton (full-bleed
+Leaflet, top bar with day chips, brief panel left, photo cards right) rebuilt
+so that every trip-specific value comes from `window.TRIP_DATA`. The only
+words about New Zealand in the HTML are the brand and the page title.
+
+What the page derives from the three tabs, so nobody has to type it twice:
+
+- The **route per day** is `from` → each stop's `place` → `to`, de-duplicated,
+  as straight lines. Phase 3 swaps these for road geometry.
+- **Numbered pins** are the stops that have a `place`, in stop order, then
+  tonight's town gets the bed pin and the halo. The brief's stop list shows
+  the same numbers, and the photo cards match.
+- The **overview** draws every day's line in its leg's colour and one pin per
+  sleeping town with a night count. Christchurch gets ✈ because it's the
+  first `from`. Click a line to jump to that day.
+- **Dates** come from `days.date`; only day 1 is required. The exporter fills
+  blanks from the nearest earlier date plus the day-number gap, so inserting
+  a day means retyping one date, not eleven. A date that isn't `YYYY-MM-DD`
+  fails the build with the cell named, because Sheets loves to localise.
+- Stats on the overview (towns, total driving hours) are summed from
+  `drive_time` strings like `4h30`. Anything else parses as zero.
+
+Basemaps: Esri satellite with CARTO labels is the default, with CARTO Light,
+Voyager and OpenTopoMap behind a switcher. The pick is saved in
+`localStorage`. `DEFAULT_BASEMAP` at the top of the script is the one
+constant to flip once Luke has chosen.
+
+Mobile: below 760px the map is fixed to the top 45vh and the cards and brief
+scroll beneath it. Legend and sheet button are hidden there. Nav chips are 44px
+tall on purpose.
+
+### Flights, and a fifth tab
+
+Flights are booked, so the itinerary has hard edges now: wheels down at
+Christchurch early afternoon on Sunday 25 October, wheels up early evening on
+Saturday 7 November. The sheet's `days` currently runs to 4 November, so there
+are **two unplanned nights (5 and 6 Nov) plus the departure day** to fill in.
+Christchurch, Akaroa, or an extra night somewhere on the way back are the
+obvious candidates. Open question, Luke's call.
+
+The flight details went into a new `flights` tab, deliberately private like
+`bookings`: the exporter can't see it, `--dump` can't write it, and
+`seed_sheet.py` won't overwrite it once it has rows. One row per leg per
+booking with a `who` column, since six people may not all be on the same
+planes. Passenger dates of birth and the like were left out on purpose; the
+sheet is shared with the whole group and that's not the place for them.
+
+### Tested how
+
+Local build from the CSVs and from the sheet, `node --check` on the inlined
+script, a grep of the built HTML for anything from the private tabs, and
+headless Chrome screenshots at 1440×900 and 390×844 of the overview and a busy
+day. Not yet tested on a real phone. Wikimedia photos are untested because no
+`places.photo` cells are filled in yet.
+
+### Next
+
+Phase 3 (OSRM road geometry, auto `drive_time`), then Phase 4 (weather,
+countdown). Before either: photos, and the two missing nights.
