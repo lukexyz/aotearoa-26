@@ -95,6 +95,7 @@ column ever appears in the `days` tab. Belt and braces against someone
 | `site/index.html`             | the page. Placeholder list view for now.          |
 | `.github/workflows/build.yml` | nightly + manual build and Pages deploy           |
 | `PLAN.md`                     | phased build plan, ticked off as work lands       |
+| `scripts/seed_sheet.py`       | one-off: CSVs → sheet tabs (robot key, Editor)    |
 
 ## 2026-09-03: the Google side, done from the terminal
 
@@ -113,3 +114,76 @@ What did: Luke made a blank sheet and shared it with the robot as Editor.
 The robot found it by listing its own Drive (`gc.list_spreadsheet_files()`),
 so no URL had to change hands, then `seed_sheet.py` filled the four tabs.
 The robot stays Editor: Luke wants to build the journey with Claude editing the tables from here, and the build itself only reads. First sheet-driven deploy is live.
+
+## 2026-09-03: state of play, and what's next
+
+### Where things stand
+
+Phases 0 and 1 are done. The loop works end to end and was proven the only
+way that counts: edit a cell in the sheet, press *Run workflow*, the live
+page changes. Then reverted.
+
+- Repo: `lukexyz/aotearoa-26`, public. Site: `https://lukexyz.github.io/aotearoa-26/`
+- Sheet: "New Zealand Aotearoa Trip - 2026", owned by Luke, four tabs seeded
+  from `data/*.csv`. The robot service account is Editor.
+- Secrets `SHEET_ID` and `GOOGLE_SERVICE_ACCOUNT_JSON` are set on the repo.
+  The key also lives locally as `service-account.json` (gitignored).
+- Builds: nightly 02:00 NZDT, on push (except `*.md`), and on demand.
+- The page itself is still the placeholder list view.
+
+### How to work with it now
+
+- **Edit the itinerary in the sheet.** That's the whole point. `from`/`to`/
+  `place` must match a `places.name`; new town means a new `places` row first
+  (right-click in Google Maps for lat, lng).
+- **Publish now** rather than waiting for the cron: Actions tab → *Build from
+  Google Sheet and deploy* → *Run workflow*. About a minute.
+- **A red run** means a sheet typo. The message names the cell
+  (`days!F8: to is 'Franz Joseph', did you mean 'Franz Josef'?`). The old
+  site stays up until it's fixed.
+- **Claude can write to the sheet** via gspread with the robot key, so
+  "add two nights in Golden Bay" can be done from the terminal. The CSVs in
+  `data/` are now a *fallback and seed*, not the source of truth. When the
+  sheet drifts from them, refresh the CSVs from the sheet, not the reverse.
+  (Todo: a `--dump` flag on `fetch_sheet.py` to do exactly that.)
+- **Locally:** `python scripts/fetch_sheet.py --check` validates the sheet;
+  `--local` uses the CSVs. `SHEET_ID` and `GOOGLE_SERVICE_ACCOUNT_JSON` must
+  be in the env for sheet mode. gcloud is on the machine but a fresh shell
+  needs the PATH refreshed.
+
+### Sheet content todos (anyone)
+
+- [ ] Dates, once flights are booked. Keep the column as plain text
+      `2026-10-24` so it survives locale formatting.
+- [ ] Decide days 1 and 2: straight to Wanaka (current, v1) or two
+      Christchurch nights first. Open question 3 above.
+- [ ] `places.photo`: a Wikimedia Commons filename per sleeping town at
+      least. Blank cells just mean no photo card.
+- [ ] Sanity-check the 21 sets of coordinates against Google Maps; they were
+      typed from memory.
+- [ ] `bookings` rows as things get booked. Never leaves the sheet.
+- [ ] Doubtful Sound and the Lake Dunstan e-bikes need booking well ahead;
+      they're already `type = booked` / `activity` in `stops`.
+
+### Code todos (Claude)
+
+- [ ] **Phase 2, the map page.** Full-bleed satellite, basemap switcher,
+      day nav, brief panel, photo cards, bed halo, mobile layout. Everything
+      read from `window.TRIP_DATA`, nothing South Island-specific in the
+      HTML. See PLAN.md for the full list.
+- [ ] `fetch_sheet.py --dump` to refresh `data/*.csv` from the sheet.
+- [ ] Bump `actions/checkout` and `actions/setup-python` off Node 20 when
+      next touching the workflow.
+- [ ] `seed_sheet.py --create` (the ADC path) is dead weight now; either
+      delete it or leave it with a comment saying why it's unused.
+- [ ] Phases 3 to 6 per PLAN.md: OSRM road routes, weather and countdown,
+      offline PWA, final basemap pick.
+
+### Things to remember
+
+- The privacy line is the `bookings` tab. Don't add address-like columns to
+  the other tabs; the exporter will refuse and the build goes red anyway.
+- Don't use "Publish to web" on the sheet. Sharing with named accounts is
+  what keeps bookings private.
+- The robot key is in the repo secret and on this disk. Rotate it from the
+  Cloud console if it ever leaks; `gh secret set` takes the new file.
