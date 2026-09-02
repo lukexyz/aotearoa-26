@@ -113,7 +113,9 @@ that path has a shelf life anyway.
 What did: Luke made a blank sheet and shared it with the robot as Editor.
 The robot found it by listing its own Drive (`gc.list_spreadsheet_files()`),
 so no URL had to change hands, then `seed_sheet.py` filled the four tabs.
-The robot stays Editor: Luke wants to build the journey with Claude editing the tables from here, and the build itself only reads. First sheet-driven deploy is live.
+The robot stays Editor: Luke wants to build the journey with Claude editing
+the tables from here, and the build itself only reads. First sheet-driven
+deploy is live.
 
 ## 2026-09-03: state of play, and what's next
 
