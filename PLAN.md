@@ -25,7 +25,7 @@ Decisions already made:
 - [x] Placeholder `site/index.html` list view
 - [x] Verified locally: 11 days, 11 stops, 21 places, bookings absent
 
-## Phase 1 — Live on GitHub Pages  🟡 Claude's half done 2026-09-02
+## Phase 1 — Live on GitHub Pages  ✅ done 2026-09-03
 
 Goal: a URL that exists, rebuilds from the CSVs, and proves the Action works
 before the sheet is involved.
@@ -41,10 +41,10 @@ Claude:
       loudly, not render a blank map.
 
 Luke (about ten minutes, steps in README):
-- [ ] Create the sheet by importing the four CSVs as tabs, share with the crew
-- [ ] Google Cloud project → enable Sheets API → service account → JSON key
-- [ ] Share the sheet with the service account email (Viewer)
-- [ ] Add `SHEET_ID` and `GOOGLE_SERVICE_ACCOUNT_JSON` repo secrets
+- [x] Create the sheet ("New Zealand Aotearoa Trip - 2026"), seeded by `seed_sheet.py`; share with the crew
+- [x] Google Cloud project `aotearoa-26` → Sheets + Drive APIs → `trip-site-reader` service account → key
+- [x] Share the sheet with the service account email (drop from Editor to Viewer now the seed is done)
+- [x] Add `SHEET_ID` and `GOOGLE_SERVICE_ACCOUNT_JSON` repo secrets
 
 Done when: editing a cell in the sheet and pressing *Run workflow* changes
 the live page.

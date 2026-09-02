@@ -95,3 +95,21 @@ column ever appears in the `days` tab. Belt and braces against someone
 | `site/index.html`             | the page. Placeholder list view for now.          |
 | `.github/workflows/build.yml` | nightly + manual build and Pages deploy           |
 | `PLAN.md`                     | phased build plan, ticked off as work lands       |
+
+## 2026-09-03: the Google side, done from the terminal
+
+gcloud via winget, `gcloud auth login` in the browser once, then everything
+else scripted: project `aotearoa-26`, Sheets + Drive APIs, service account
+`trip-site-reader`, key straight into a repo secret with `gh secret set`.
+
+What didn't work: `gcloud auth application-default login --scopes=...` so
+gspread could create the sheet *as Luke*. Two attempts hit a CSRF state
+mismatch because Luke's own login and mine shared `localhost:8085`, and the
+plain command without `--scopes` grants no Sheets access. gcloud also warns
+that Sheets/Drive scopes on its default client ID are being blocked soon, so
+that path has a shelf life anyway.
+
+What did: Luke made a blank sheet and shared it with the robot as Editor.
+The robot found it by listing its own Drive (`gc.list_spreadsheet_files()`),
+so no URL had to change hands, then `seed_sheet.py` filled the four tabs.
+Robot goes back to Viewer afterwards. First sheet-driven deploy is live.
