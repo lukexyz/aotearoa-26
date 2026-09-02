@@ -42,6 +42,9 @@ jobs:
             python scripts/fetch_sheet.py
           fi
 
+      - name: Route the drives along roads (OSRM, cached in data/routes.json)
+        run: python scripts/routes.py
+
       - name: Build site
         run: python scripts/build.py
 

@@ -19,9 +19,9 @@ the sheet for the rest.
 ```
 Google Sheet ──(nightly / on demand)──▶ GitHub Action
    days                                   scripts/fetch_sheet.py  →  site/data.json
-   stops                                  scripts/build.py        →  dist/index.html
-   places                                 deploy-pages            →  https://<user>.github.io/aotearoa-26/
-   bookings  ✗ never leaves the sheet
+   stops                                  scripts/routes.py       →  + road geometry (OSRM, cached)
+   places                                 scripts/build.py        →  dist/index.html
+   bookings  ✗ never leaves the sheet     deploy-pages            →  https://<user>.github.io/aotearoa-26/
 ```
 
 `SHEET_SCHEMA.md` describes the tabs and columns. `data/*.csv` is a copy of the
@@ -55,6 +55,7 @@ python scripts/fetch_sheet.py --local     # or without --local, with SHEET_ID an
 python scripts/fetch_sheet.py --check     # validate the sheet without writing anything;
                                           # names the cell for any typo it finds
 python scripts/fetch_sheet.py --dump      # copy the sheet's exported tabs back into data/*.csv
+python scripts/routes.py                  # make the drives follow the road (OSRM); commit data/routes.json after
 python scripts/build.py
 python -m http.server -d dist 8000        # open http://localhost:8000
 ```
@@ -66,9 +67,11 @@ with `--dump`, and is what CI builds from if the sheet secrets are missing.
 
 One file, `site/index.html`. Leaflet map with a basemap switcher (satellite,
 CARTO Light, Voyager, OpenTopoMap; the choice is remembered per browser).
-Overview shows the whole loop with a pin per town; each day shows the drive,
-numbered pins for the stops that have a `place`, tonight's town with a halo,
-and photo cards on the right. Below 760px the map sits on top and the rest
+Overview shows the whole loop with a pin per town; each day shows the drive
+along the actual road, numbered pins for the stops that have a `place`,
+tonight's town with a halo, and photo cards on the right. The drive is routed
+through the stops that have a `place`, so a detour you want drawn (and timed)
+needs a stops row, not just a mention in the notes. Below 760px the map sits on top and the rest
 scrolls underneath. `#day-7` in the URL opens that day; during the trip the
 page opens on today.
 

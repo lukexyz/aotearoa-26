@@ -94,23 +94,25 @@ Hygiene:
 Done when: the site reads as well as the Dolomites one and nothing about the
 South Island is hardcoded in `index.html`.
 
-## Phase 3 — Routes that follow the road
+## Phase 3 — Routes that follow the road  ✅ done 2026-09-03 (spurs still to do)
 
 Goal: driving legs trace SH6/SH8/SH1 instead of cutting across the Alps.
 
-- [ ] `scripts/routes.py`: for each day, call OSRM (`router.project-osrm.org`)
-      with the day's place sequence, write the geometry, distance and
-      duration into `data.json`. Straight-line fallback and a warning if the
-      request fails. Runs in the workflow after the fetch step.
-- [ ] Cache responses in `site/routes.cache.json` keyed by the place sequence,
-      committed, so a nightly rebuild only calls OSRM for changed days.
-- [ ] Auto-fill `drive_time` from OSRM when the sheet cell is blank; the sheet
-      wins when it isn't.
+- [x] `scripts/routes.py`: one OSRM request per consecutive pair of places
+      (`router.project-osrm.org`, no key), geometry simplified to ~70 m and
+      written into `data.json` as encoded polylines with distance and
+      duration. Straight-line fallback and a `::warning::` if a request
+      fails. Runs in the workflow after the fetch step.
+- [x] Cache in `data/routes.json` keyed by the two coordinates, committed, so
+      a nightly rebuild with no changes makes no requests and a new stop
+      only fetches the legs either side of it.
+- [x] Auto-fill `drive_time` from OSRM when the sheet cell is blank (shown as
+      `~5h40`); the sheet wins when it isn't. `drive_km` always comes from OSRM.
 - [ ] Non-driving legs (Doubtful Sound boat, Great Taste Trail, Lake Dunstan
       ride) drawn as dashed spurs from a `stops.type`, not routed.
 
 Done when: the Day 7 line goes over Haast Pass and says roughly 6h30 without
-anyone typing it.
+anyone typing it. (It does: OSRM says 6h55 and 509 km.)
 
 ## Phase 4 — Live bits
 

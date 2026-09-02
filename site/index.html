@@ -310,8 +310,15 @@ window.TRIP_DATA = /*__TRIP_DATA__*/null;
   const dow = iso => fmt(iso, { weekday: 'short' });
   const dmon = iso => fmt(iso, { day: 'numeric', month: 'short' });
   const longDate = iso => fmt(iso, { weekday: 'long', day: 'numeric', month: 'long' });
-  const mins = t => { const m = /(\d+)\s*h\s*(\d*)/i.exec(t || ''); return m ? +m[1] * 60 + (+m[2] || 0) : 0; };
+  const mins = t => {
+    t = String(t || '');
+    const h = /(\d+)\s*h\s*(\d*)/i.exec(t); if (h) return +h[1] * 60 + (+h[2] || 0);
+    const m = /(\d+)\s*m/i.exec(t); return m ? +m[1] : 0;
+  };
   const hours = m => m ? `~${Math.round(m / 60)}h` : '';
+  /* "4h30 · 426 km" for a day, or '' if the sheet and OSRM both have nothing */
+  const driveText = d => [d.drive_time, d.drive_km ? `${d.drive_km} km` : ''].filter(Boolean).map(esc).join(' · ');
+  const driveChip = (d, sep) => { const t = driveText(d); return t ? sep + t : ''; };
 
   /* ordered, de-duplicated places for a day: from → stop places → to */
   function dayPlaces(d) {
@@ -321,6 +328,36 @@ window.TRIP_DATA = /*__TRIP_DATA__*/null;
     return seq;
   }
   const stopsAt = (d, name) => d.stops.filter(s => s.place === name);
+
+  /* Google encoded polyline (precision 5) → [[lat, lng], ...] */
+  function decodePoly(str) {
+    const pts = []; let i = 0, lat = 0, lng = 0;
+    while (i < str.length) {
+      let b, shift = 0, result = 0;
+      do { b = str.charCodeAt(i++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+      lat += (result & 1) ? ~(result >> 1) : (result >> 1);
+      shift = 0; result = 0;
+      do { b = str.charCodeAt(i++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+      lng += (result & 1) ? ~(result >> 1) : (result >> 1);
+      pts.push([lat / 1e5, lng / 1e5]);
+    }
+    return pts;
+  }
+  const ROUTES = D.routes || {};
+  const pathCache = {};
+  /* the day's drive as drawn: OSRM road geometry per leg where routes.py found one, else a straight segment */
+  function dayPath(d) {
+    if (pathCache[d.n]) return pathCache[d.n];
+    const seq = dayPlaces(d);
+    const keys = Array.isArray(d.legs) && d.legs.length === seq.length - 1 ? d.legs : [];
+    const path = [];
+    for (let i = 0; i < seq.length - 1; i++) {
+      const r = ROUTES[keys[i]];
+      const seg = r && r.poly ? decodePoly(r.poly) : [PLACES[seq[i]].at, PLACES[seq[i + 1]].at];
+      seg.forEach((pt, j) => { if (j || !path.length) path.push(pt); });   // don't repeat the joint
+    }
+    return (pathCache[d.n] = path);
+  }
 
   /* the numbered places for a day: stop places in order, then tonight's town */
   function dayCards(d) {
@@ -438,13 +475,13 @@ window.TRIP_DATA = /*__TRIP_DATA__*/null;
     if (cur === 0) {
       /* the whole loop, one line per day in its leg's colour */
       DAYS.forEach(d => {
-        const seq = dayPlaces(d).map(n => PLACES[n].at);
-        if (seq.length < 2) return;
-        L.polyline(seq, { color: '#0b1412', weight: 7, opacity: .4 }).addTo(layer);
-        L.polyline(seq, { color: legColour(d.leg), weight: 3.5, opacity: .95 })
-          .bindTooltip(`Day ${d.n} · ${esc(d.from)} → ${esc(d.to)}${d.drive_time ? ' · ' + esc(d.drive_time) : ''}`, { sticky: true })
+        const path = dayPath(d);
+        if (path.length < 2) return;
+        L.polyline(path, { color: '#0b1412', weight: 7, opacity: .4 }).addTo(layer);
+        L.polyline(path, { color: legColour(d.leg), weight: 3.5, opacity: .95 })
+          .bindTooltip(`Day ${d.n} · ${esc(d.from)} → ${esc(d.to)}${driveChip(d, ' · ')}`, { sticky: true })
           .on('click', () => render(DAYS.indexOf(d) + 1)).addTo(layer);
-        seq.forEach(p => pts.push(p));
+        path.forEach(p => pts.push(p));
       });
       const bs = beds();
       bs.forEach((b, idx) => {
@@ -458,13 +495,13 @@ window.TRIP_DATA = /*__TRIP_DATA__*/null;
       });
     } else {
       const d = DAYS[cur - 1];
-      const seq = dayPlaces(d).map(n => PLACES[n].at);
-      if (seq.length >= 2) {
-        L.polyline(seq, { color: '#0b1412', weight: 9, opacity: .45 }).addTo(layer);
-        L.polyline(seq, { color: '#E8643A', weight: 4, opacity: .96 })
-          .bindTooltip(`${esc(d.from)} → ${esc(d.to)}${d.drive_time ? ' · ' + esc(d.drive_time) : ''}`, { sticky: true }).addTo(layer);
+      const path = dayPath(d);
+      if (path.length >= 2) {
+        L.polyline(path, { color: '#0b1412', weight: 9, opacity: .45 }).addTo(layer);
+        L.polyline(path, { color: '#E8643A', weight: 4, opacity: .96 })
+          .bindTooltip(`${esc(d.from)} → ${esc(d.to)}${driveChip(d, ' · ')}`, { sticky: true }).addTo(layer);
       }
-      seq.forEach(p => pts.push(p));
+      path.forEach(p => pts.push(p));
 
       /* where we woke up, if it isn't also a numbered place */
       const cards = dayCards(d);
@@ -577,7 +614,7 @@ window.TRIP_DATA = /*__TRIP_DATA__*/null;
     }).join('');
     briefEl.innerHTML = `<div class="brief-kick">${esc(kick)}</div>
       <h2 class="brief-title">${esc(d.title || `${d.from} → ${d.to}`)}</h2>
-      <div class="brief-route">${route}${d.drive_time ? `<span class="brief-chip">🚗 ${esc(d.drive_time)}</span>` : ''}</div>
+      <div class="brief-route">${route}${driveText(d) ? `<span class="brief-chip">🚗 ${driveText(d)}</span>` : ''}</div>
       ${d.notes ? `<p class="brief-notes">${esc(d.notes)}</p>` : ''}
       ${stops ? `<div class="brief-h">Stops</div><ul class="brief-stops">${stops}</ul>` : ''}
       ${d.to ? `<div class="brief-bed">🛏 Sleeping in <b>${esc(d.to)}</b>${BOOKINGS_URL ? ` · <a href="${BOOKINGS_URL}" target="_blank" rel="noopener">booking details ↗</a>` : ''}</div>` : ''}

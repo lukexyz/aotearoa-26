@@ -91,6 +91,8 @@ column ever appears in the `days` tab. Belt and braces against someone
 | `SHEET_SCHEMA.md`             | tabs and columns for the Google Sheet             |
 | `data/*.csv`                  | local copy of the sheet, and the CI fallback      |
 | `scripts/fetch_sheet.py`      | sheet or CSV → `site/data.json`                   |
+| `scripts/routes.py`           | adds OSRM road geometry to `data.json`            |
+| `data/routes.json`            | cache of OSRM answers, keyed by coordinates       |
 | `scripts/build.py`            | `site/` + data → `dist/`                          |
 | `site/index.html`             | the page: Leaflet map, day nav, brief, cards      |
 | `.github/workflows/build.yml` | nightly + manual build and Pages deploy           |
@@ -173,8 +175,10 @@ page changes. Then reverted.
 - [ ] Bump `actions/checkout` and `actions/setup-python` off Node 20 when
       next touching the workflow.
 - [x] `seed_sheet.py --create` left in place with a comment saying why it's parked.
-- [ ] Phases 3 to 6 per PLAN.md: OSRM road routes, weather and countdown,
-      offline PWA, final basemap pick.
+- [x] Phase 3, road routes. Shipped 2026-09-03, see below. Dashed spurs for
+      the bike and boat legs still to do.
+- [ ] Phases 4 to 6 per PLAN.md: weather and countdown, offline PWA, final
+      basemap pick.
 
 ### Things to remember
 
@@ -246,3 +250,44 @@ day. Not yet tested on a real phone. Wikimedia photos are untested because no
 
 Phase 3 (OSRM road geometry, auto `drive_time`), then Phase 4 (weather,
 countdown). Before either: photos, and the two missing nights.
+
+## 2026-09-03: Phase 3, the drives follow the road
+
+The straight lines are gone. `scripts/routes.py` runs after the fetch step and
+asks the public OSRM server for a driving route between each consecutive pair
+of places in a day (`from` → stop places → `to`, the same rule the page uses).
+Seventeen requests for the whole trip, under a second each, no key.
+
+Design choices, in case they need revisiting:
+
+- **Cache by coordinates, not by day.** `data/routes.json` is keyed by
+  `lat,lng>lat,lng`. Moving a stop, adding a day, reordering: only legs that
+  have never been seen get fetched. A rebuild with no changes makes zero
+  requests, which matters because OSRM's demo server is a courtesy.
+- **Full geometry, simplified locally.** OSRM's own `simplified` overview is
+  ~60 points for a 500 km leg, too coarse at zoom 11. `full` is 37 KB per
+  leg. So the script fetches full and runs Douglas-Peucker at ~70 m. The
+  whole trip's geometry is 10 KB inlined, and the road still hugs the valleys.
+- **Never red.** A failed leg is logged as a warning and the page draws a
+  straight segment for it. The build must not depend on a third-party server
+  being up at 02:00.
+- **The page stays dumb.** It looks up `days[].legs` in `routes`, decodes
+  the polyline, and concatenates. Anything missing falls back to the two
+  coordinates. No routing logic in JS, no runtime calls.
+- **Drive times.** The sheet wins if it has a value. Blank cells get OSRM's
+  estimate, shown with a `~`. `drive_km` always comes from OSRM. The script
+  prints a sheet-vs-OSRM table, which is a decent sanity check: day 1 was
+  typed as 4h30 and OSRM says 5h40, which is nearer the truth.
+
+What it turned up straight away: day 10 "via Kaiteriteri" had no Kaiteriteri
+stop, so the route went straight down SH6 and OSRM said 1h35 against the
+sheet's 3h45. Added the stops row and the line now goes over the hill to the
+beach. The rule, now in the README: a detour you want drawn needs a stops row
+with a `place`, not just a mention in the notes.
+
+Not done: the non-driving legs. Nelson → Mapua is a bike ride, Manapouri →
+Doubtful Sound is a boat, and both are currently drawn as the road OSRM would
+drive. Dashed spurs from `stops.type` are the last Phase 3 item.
+
+Tested: local build, `node --check` on the inlined script, headless
+screenshots of the overview, day 7 (over Haast Pass) and day 10.

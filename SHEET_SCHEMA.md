@@ -16,7 +16,7 @@ Only `days`, `stops` and `places` are exported to the website. `bookings` and
 | leg          | West Coast                       | groups days into sections on the page    |
 | from         | Te Anau                          | town we wake up in                       |
 | to           | Franz Josef                      | town we sleep in                         |
-| drive_time   | 6h30                             | free text, shown as a chip               |
+| drive_time   | 4h30                             | optional. Blank = worked out from the road route and shown as `~5h40`. Fill it in to override |
 | notes        | Blue Pools on the way over...    | paragraph, plain text                    |
 | sheet_row    | (leave blank)                    | filled by the script, ignore             |
 
