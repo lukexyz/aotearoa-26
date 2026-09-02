@@ -38,7 +38,7 @@ secrets aren't configured.
    - *IAM & Admin → Service Accounts → Create*. No roles needed.
    - Open it → *Keys → Add key → JSON*. A file downloads. Don't commit it.
    - Copy the service account's email (ends in `iam.gserviceaccount.com`) and
-     **share the sheet with it as Viewer**, like you would with a person.
+     **share the sheet with it**, like you would with a person. Viewer is enough for the build; ours is Editor so `seed_sheet.py` and friends can write to it.
 3. **Add two repo secrets** (*Settings → Secrets and variables → Actions*):
    - `SHEET_ID`: the long id in the sheet URL, between `/d/` and `/edit`
    - `GOOGLE_SERVICE_ACCOUNT_JSON`: the entire contents of the downloaded JSON

@@ -43,7 +43,7 @@ Claude:
 Luke (about ten minutes, steps in README):
 - [x] Create the sheet ("New Zealand Aotearoa Trip - 2026"), seeded by `seed_sheet.py`; share with the crew
 - [x] Google Cloud project `aotearoa-26` → Sheets + Drive APIs → `trip-site-reader` service account → key
-- [x] Share the sheet with the service account email (drop from Editor to Viewer now the seed is done)
+- [x] Share the sheet with the service account email. Kept as Editor so Claude can edit the tables from the terminal too.
 - [x] Add `SHEET_ID` and `GOOGLE_SERVICE_ACCOUNT_JSON` repo secrets
 
 Done when: editing a cell in the sheet and pressing *Run workflow* changes
