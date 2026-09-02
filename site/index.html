@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>South Island Road Trip</title>
+<style>
+  :root { --ink:#1d1d1b; --muted:#6b6b66; --paper:#fbf9f3; --card:#fff; --line:#e6e2d8; --accent:#7c5cff; --chip:#ffe9e6; --chipink:#b3261e; --leg:#fff3a8; }
+  * { box-sizing:border-box }
+  body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.5 Georgia, "Times New Roman", serif; }
+  main { max-width:760px; margin:0 auto; padding:24px 16px 80px; }
+  .kicker { font:600 11px/1 system-ui, sans-serif; letter-spacing:.14em; color:var(--muted); text-transform:uppercase; }
+  h1 { font-size:2.2rem; margin:.25rem 0 1.5rem; }
+  h1 span { background:var(--leg); padding:0 .3rem; }
+  .leg { display:inline-block; margin:1.6rem 0 .6rem; padding:.2rem .6rem; background:var(--leg); font:600 11px/1.6 system-ui, sans-serif; letter-spacing:.12em; text-transform:uppercase; }
+  .day { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:10px; }
+  .day header { display:flex; gap:12px; align-items:baseline; flex-wrap:wrap; }
+  .day h2 { margin:0; font-size:1.1rem; }
+  .n { font:700 13px/1 system-ui, sans-serif; color:var(--muted); min-width:3.2em; }
+  .chip { font:600 11px/1.6 system-ui, sans-serif; padding:0 .5em; border-radius:999px; background:var(--chip); color:var(--chipink); }
+  .date { font:12px system-ui, sans-serif; color:var(--muted); margin-left:auto; }
+  .notes { margin:.5rem 0 0; color:#333; font-size:.95rem; }
+  .stay { margin:.6rem 0 0; font:13px system-ui, sans-serif; color:var(--muted); }
+  .stay a { color:var(--accent); text-decoration:none; font-weight:600; }
+  ul.stops { list-style:none; padding:0; margin:.6rem 0 0; font:14px system-ui, sans-serif; }
+  ul.stops li { padding:.2rem 0; border-top:1px dashed var(--line); }
+  ul.stops li:first-child { border-top:0 }
+  ul.stops a { color:var(--accent); }
+  .type { display:inline-block; width:1.6em; }
+  footer { margin-top:2rem; font:12px system-ui, sans-serif; color:var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <div class="kicker">Draft itinerary · <span id="count"></span> days · Christchurch loop</div>
+  <h1><span>South Island</span> Road Trip</h1>
+  <div id="app"></div>
+  <footer>Edit the trip in the shared Google Sheet. The site rebuilds itself overnight, or on demand from the Actions tab. Built <span id="built"></span>.</footer>
+</main>
+<script>
+window.TRIP_DATA = /*__TRIP_DATA__*/null;
+(function () {
+  const data = window.TRIP_DATA;
+  const app = document.getElementById('app');
+  if (!data || !data.days) { app.textContent = 'No itinerary data yet.'; return; }
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const icon = { food:'🥧', walk:'🥾', drive:'🚗', activity:'🚲', booked:'🎟️' };
+  const bookingsUrl = data.sheet_id
+    ? `https://docs.google.com/spreadsheets/d/${data.sheet_id}/edit#gid=${data.bookings_gid}`
+    : '';
+  document.getElementById('count').textContent = data.days.length;
+  document.getElementById('built').textContent = new Date().toLocaleDateString('en-NZ');
+
+  let currentLeg = null, html = '';
+  for (const d of data.days) {
+    if (d.leg && d.leg !== currentLeg) { currentLeg = d.leg; html += `<div class="leg">${esc(d.leg)}</div>`; }
+    const route = d.from && d.to && d.from !== d.to ? `${esc(d.from)} → ${esc(d.to)}` : esc(d.to || d.from);
+    html += `<article class="day">
+      <header>
+        <span class="n">Day ${esc(d.day)}</span>
+        <h2>${esc(d.title || route)}</h2>
+        ${d.drive_time ? `<span class="chip">${esc(d.drive_time)}</span>` : ''}
+        ${d.date ? `<span class="date">${esc(d.date)}</span>` : ''}
+      </header>
+      ${d.title && route && d.title !== route ? `<div class="stay">${route}</div>` : ''}
+      ${d.notes ? `<p class="notes">${esc(d.notes)}</p>` : ''}
+      ${d.stops.length ? `<ul class="stops">${d.stops.map(s => `<li><span class="type">${icon[(s.type||'').toLowerCase()] || '📍'}</span>${s.link ? `<a href="${esc(s.link)}" target="_blank" rel="noopener">${esc(s.name)}</a>` : esc(s.name)}${s.notes ? ` <span style="color:var(--muted)">· ${esc(s.notes)}</span>` : ''}</li>`).join('')}</ul>` : ''}
+      ${d.to ? `<div class="stay">Sleeping in <strong>${esc(d.to)}</strong>${bookingsUrl ? ` · <a href="${bookingsUrl}" target="_blank" rel="noopener">booking details ↗</a>` : ''}</div>` : ''}
+    </article>`;
+  }
+  app.innerHTML = html;
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+dist/
+site/data.json
+.venv/
+__pycache__/
+*.json.key
+service-account*.json

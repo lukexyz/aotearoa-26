@@ -1,0 +1,60 @@
+name: Build from Google Sheet and deploy
+
+on:
+  workflow_dispatch:          # the "Run workflow" button in the Actions tab
+  schedule:
+    - cron: "0 14 * * *"      # 02:00 NZDT every night (UTC 14:00 the previous day)
+  push:
+    branches: [main]          # code changes also rebuild
+    paths-ignore: ["**.md"]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Pull itinerary from the sheet
+        env:
+          SHEET_ID: ${{ secrets.SHEET_ID }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [ -z "$SHEET_ID" ]; then
+            echo "::warning::SHEET_ID secret not set, building from data/*.csv instead"
+            python scripts/fetch_sheet.py --local
+          else
+            python scripts/fetch_sheet.py
+          fi
+
+      - name: Build site
+        run: python scripts/build.py
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
