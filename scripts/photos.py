@@ -30,6 +30,7 @@ What goes into data.json for each place:
     photo_src     what the sheet cell said, so the script can be re-run on its own output
     photo_credit  "Artist · CC BY-SA 4.0", when known
     photo_page    the Commons file page, for the credit link
+    photo_url     direct thumbnail URL on upload.wikimedia.org (the page falls back to Special:FilePath without it)
 """
 from __future__ import annotations
 
@@ -58,6 +59,8 @@ TIMEOUT = 20
 PAUSE = 1.0               # between requests; Wikipedia 429s a fast burst
 MAX_KM = 40               # article must sit this close to the place's coordinates
 BATCH = 40                # titles per query request (API max is 50)
+THUMB_WIDTH = 760         # px asked for; Commons rounds to a standard size (960 today). A direct thumb.wikimedia.org
+                          # URL, not the Special:FilePath redirect, so the browser can fetch it with CORS and cache it offline
 
 sys.stdout.reconfigure(encoding="utf-8")
 
@@ -144,7 +147,7 @@ def credits(files: list[str]) -> dict[str, dict]:
     for i in range(0, len(files), BATCH):
         chunk = files[i:i + BATCH]
         body = api(COMMONS_API, {"action": "query", "titles": "|".join("File:" + f for f in chunk), "redirects": 1,
-                                 "prop": "imageinfo", "iiprop": "extmetadata|url",
+                                 "prop": "imageinfo", "iiprop": "extmetadata|url", "iiurlwidth": THUMB_WIDTH,
                                  "iiextmetadatafilter": "Artist|LicenseShortName|Credit"})
         if not body:
             continue
@@ -157,7 +160,8 @@ def credits(files: list[str]) -> dict[str, dict]:
             lic = meta.get("LicenseShortName", {}).get("value", "").strip()
             credit = " · ".join(x for x in (artist, lic) if x)
             fname = p["title"].split(":", 1)[-1].replace(" ", "_")
-            out[fname] = {"credit": credit, "page": info.get("descriptionurl", "")}
+            out[fname] = {"credit": credit, "page": info.get("descriptionurl", ""),
+                          "url": (info.get("thumburl") or info.get("url", "")).split("?")[0]}   # drop utm_ tracking
     return out
 
 
@@ -233,7 +237,7 @@ def main() -> None:
             resolved[n] = cache.get(n, {}).get("file", "")
 
     need_credit = sorted({f for f in resolved.values() if f and not f.startswith("http")
-                          and f not in cache.get("_credits", {})})
+                          and not cache.get("_credits", {}).get(f, {}).get("url")})
     if need_credit and not args.offline:
         cache.setdefault("_credits", {}).update(credits(need_credit))
 
@@ -247,6 +251,7 @@ def main() -> None:
         c = cache.get("_credits", {}).get(f, {}) if f and not f.startswith("http") else {}
         p["photo_credit"] = c.get("credit", "")
         p["photo_page"] = c.get("page", "")
+        p["photo_url"] = c.get("url", "").split("?")[0]
     DATA_FILE.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
 
     if json.dumps(cache, sort_keys=True) != before:

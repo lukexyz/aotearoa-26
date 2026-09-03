@@ -42,6 +42,11 @@ OUT_FILE = ROOT / "site" / "data.json"
 EXPORT_TABS = ["days", "stops", "places"]
 PRIVATE_TABS = ["bookings", "flights"]   # never read, never written
 
+# stops of these types are legs we don't drive: a bike trail, a boat across a
+# lake. They're drawn as a dashed spur from the last road place and skipped by
+# the road router. Compared case-insensitively.
+SPUR_TYPES = {"bike", "boat", "ferry", "cruise", "kayak", "hike", "tramp", "ride"}
+
 
 def clean(rows: list[dict]) -> list[dict]:
     """Strip whitespace, drop fully-empty rows, normalise keys to snake_case."""
@@ -240,6 +245,8 @@ def shape(tabs: dict) -> dict:
     fill_dates(days)
     stops_by_day: dict[str, list[dict]] = {}
     for s in tabs["stops"]:
+        if s.get("type", "").strip().lower() in SPUR_TYPES:
+            s["spur"] = True
         stops_by_day.setdefault(s.get("day", ""), []).append(s)
     for d in days:
         d["stops"] = stops_by_day.get(d["day"], [])

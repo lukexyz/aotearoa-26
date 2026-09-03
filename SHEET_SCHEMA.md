@@ -26,8 +26,8 @@ Only `days`, `stops` and `places` are exported to the website. `bookings` and
 |--------|-------------------------------------------|----------------------------------------------|
 | day    | 8                                         | which day it belongs to                      |
 | name   | Wakefield Bakery                          |                                              |
-| type   | food / walk / drive / activity / booked   | free text, used for an icon                  |
-| link   | https://...                               | optional, public URL only                    |
+| type   | food / walk / drive / activity / booked   | free text, used for an icon. `bike`, `boat`, `ferry`, `cruise`, `kayak`, `hike`, `tramp`, `ride` mean "not driven": drawn as a dashed spur from the last road place to this stop's `place`. `booked` adds a link to the bookings tab |
+| link   | https://...                               | optional, public URL only. Or the word `tides` for NIWA's tide times at this stop's place on that day |
 | notes  | 30min short of Nelson, worth holding out  | optional                                     |
 | place  | Wakefield                                 | optional, a name from the `places` tab, puts a pin on the map |
 

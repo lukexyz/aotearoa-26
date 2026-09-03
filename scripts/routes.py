@@ -138,9 +138,12 @@ def osrm(a: tuple[float, float], b: tuple[float, float]) -> dict | None:
 
 # ---------------------------------------------------------------- itinerary
 def day_places(d: dict, places: dict) -> list[str]:
-    """from → stop places → to, de-duplicated, same as the page's dayPlaces()."""
+    """from → stop places → to, de-duplicated, same as the page's dayPlaces().
+
+    Stops flagged `spur` (bike, boat, ...) are not driven to, so they're left out.
+    """
     seq: list[str] = []
-    for n in [d.get("from", "")] + [s.get("place", "") for s in d.get("stops", [])] + [d.get("to", "")]:
+    for n in [d.get("from", "")] + [s.get("place", "") for s in d.get("stops", []) if not s.get("spur")] + [d.get("to", "")]:
         if n and n in places and (not seq or seq[-1] != n):
             seq.append(n)
     return seq

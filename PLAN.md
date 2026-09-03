@@ -1,6 +1,6 @@
 # Build plan — South Island 2026 trip site
 
-Status as of 2026-09-02. Phases are in order; each one ships something usable
+Status as of 2026-09-03. Phases are in order; each one ships something usable
 on its own. Ticks are updated as work lands.
 
 Decisions already made:
@@ -95,7 +95,7 @@ Hygiene:
 Done when: the site reads as well as the Dolomites one and nothing about the
 South Island is hardcoded in `index.html`.
 
-## Phase 3 — Routes that follow the road  ✅ done 2026-09-03 (spurs still to do)
+## Phase 3 — Routes that follow the road  ✅ done 2026-09-03
 
 Goal: driving legs trace SH6/SH8/SH1 instead of cutting across the Alps.
 
@@ -109,8 +109,11 @@ Goal: driving legs trace SH6/SH8/SH1 instead of cutting across the Alps.
       only fetches the legs either side of it.
 - [x] Auto-fill `drive_time` from OSRM when the sheet cell is blank (shown as
       `~5h40`); the sheet wins when it isn't. `drive_km` always comes from OSRM.
-- [ ] Non-driving legs (Doubtful Sound boat, Great Taste Trail, Lake Dunstan
-      ride) drawn as dashed spurs from a `stops.type`, not routed.
+- [x] Non-driving legs (Doubtful Sound boat, Great Taste Trail, Lake Dunstan
+      ride) drawn as dashed spurs from a `stops.type` (bike, boat, ferry,
+      cruise, kayak, hike, tramp, ride), not routed. The rule lives in
+      `fetch_sheet.py` (`SPUR_TYPES`), which tags each stop; routes.py and the
+      page just read the flag.
 
 Done when: the Day 7 line goes over Haast Pass and says roughly 6h30 without
 anyone typing it. (It does: OSRM says 6h55 and 509 km.)
@@ -123,31 +126,37 @@ anyone typing it. (It does: OSRM says 6h55 and 509 km.)
 - [x] Credit + licence link on cards and popups from Commons extmetadata.
 - [x] `--preview` contact sheet; README "Photos" explainer.
 
-## Phase 4 — Live bits
+## Phase 4 — Live bits  ✅ done 2026-09-03
 
-- [ ] Port `weather.js`: Open-Meteo forecast for the current day's town,
-      `Pacific/Auckland`, 30 min cache. Shown only when the trip is within
-      the 7-day forecast window; hidden otherwise.
-- [ ] Countdown on the overview until day 1, then "Day N of 11" during.
-- [ ] Punakaiki tide: link to the LINZ tide table for the day, so the
-      blowhole call can be made the night before.
-- [ ] Optional `stops.type = booked` badge with a link straight to the sheet
-      row.
+- [x] Open-Meteo daily forecast for tonight's town, `Pacific/Auckland`,
+      16-day window, 30 min cache in `localStorage`. Shown in the day brief
+      only when the day is inside the window; hidden when offline or past.
+- [x] Countdown in the top bar and the overview stats until day 1, then
+      "Day N of 11" during, "Home again" after. By New Zealand's calendar.
+- [x] Punakaiki tide: `stops.link` = `tides` links to NIWA's tide forecaster
+      for the stop's coordinates on that day (LINZ has no per-day URL; NIWA
+      reads latitude/longitude/startDate from the query string).
+- [x] `stops.type = booked` chip linking to the bookings tab (a row-level
+      link would need the row number exported; the tab is close enough).
 
-## Phase 5 — Offline
+## Phase 5 — Offline  ✅ done 2026-09-03
 
-- [ ] `manifest.json` + icon so it installs to the home screen.
-- [ ] Service worker: cache-first for `index.html`, Leaflet and the current
-      basemap tiles as they're viewed, capped size. Pre-cache nothing
-      speculative; tile corridors are too big.
-- [ ] Verify in airplane mode: the page opens, today's brief and stops are
-      readable, previously viewed map areas still render.
+- [x] `manifest.webmanifest` + PNG icons (`scripts/make_icons.py`) so it
+      installs to the home screen on iOS and Android.
+- [x] `site/sw.js`: page network-first with a 4 s timeout then cache;
+      Leaflet cache-first; tiles and photos cache-first as viewed, capped at
+      2,500, oldest dropped. Fetched with CORS so nothing is stored opaque.
+      Nothing pre-cached speculatively. `build.py` stamps a page hash into
+      the worker so each deploy replaces the page cache.
+- [x] Verified headless: page installed over two loads, then every host
+      blackholed (`--host-resolver-rules="MAP * 127.0.0.1"`): the page, day
+      brief, photos and the viewed tiles all rendered from cache.
 
 ## Phase 6 — Finish
 
 - [ ] Luke picks the default basemap; flip `DEFAULT_BASEMAP`.
 - [x] Dates filled in once flights are booked. (Flights booked 2026-09; trip 25 Oct – 7 Nov.)
-- [ ] Photos for every sleeping town and headline stop.
+- [x] Photos for every sleeping town and headline stop (automatic since Phase 3b).
 - [ ] MUSINGS gets the retrospective. (README already has the live link.)
 - [ ] Share the URL and the sheet with the other five.
 

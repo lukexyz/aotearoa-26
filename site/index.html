@@ -6,6 +6,13 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0c1614">
 <title>Aotearoa 2026 · South Island road trip</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Aotearoa 26">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
 :root{
@@ -74,6 +81,14 @@ a{color:var(--amber)}
 .brief-route .arr{color:var(--muted)}
 .brief-chip{font-size:10px;font-weight:800;letter-spacing:.05em;background:rgba(63,180,166,.18);color:#8fe0d4;
   padding:3px 7px;border-radius:5px;white-space:nowrap}
+.brief-wx[hidden]{display:none}
+.brief-wx{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:10px;padding:8px 10px;border-radius:8px;
+  background:rgba(125,164,232,.13);border-left:2px solid #7DA4E8;font-size:11.5px;color:#cfdcd7;line-height:1.35}
+.brief-wx .wx-ico{font-size:22px;line-height:1}
+.brief-wx .wx-t{font-size:16px;font-weight:800;color:#fff}
+.brief-wx .wx-t small{font-size:11px;font-weight:700;color:var(--muted)}
+.brief-wx .wx-x{flex:1 1 140px}
+.brief-wx .wx-k{flex:0 0 100%;font-size:8.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#9db6e0;margin-top:-2px}
 .brief-notes{margin:9px 0 0;font-size:12.5px;color:#bccbc5;line-height:1.55}
 .brief-h{margin-top:12px;font-size:8.5px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 .brief-stops{list-style:none;margin:5px 0 0;padding:0}
@@ -89,6 +104,8 @@ a{color:var(--amber)}
 .brief-stop .sn{color:var(--muted)}
 .brief-stop .sp{display:inline-block;margin-left:6px;font-size:9.5px;font-weight:800;color:var(--amber);
   background:rgba(242,179,61,.16);padding:1px 5px;border-radius:4px;vertical-align:1px}
+.brief-stop a.sp-bk{color:#8fe0d4;background:rgba(63,180,166,.18);text-decoration:none}
+.brief-stop a.sp-bk:hover{text-decoration:underline}
 .brief-bed{margin-top:12px;font-size:11.5px;background:rgba(232,100,58,.15);border-left:2px solid var(--coral);
   padding:8px 10px;border-radius:0 7px 7px 0;color:#f6cdb9;line-height:1.5}
 .brief-bed b{color:#fff}
@@ -197,6 +214,7 @@ a{color:var(--amber)}
   border-radius:11px;padding:9px 15px;box-shadow:0 8px 30px rgba(0,0,0,.55);font-size:11px;color:#c0cec8}
 .legend-i{display:flex;align-items:center;gap:7px;white-space:nowrap}
 .legend-sw{width:22px;border-top:3px solid;border-radius:2px}
+.legend-sw.dash{border-top-style:dashed}
 .legend-dot{width:12px;height:12px;border-radius:50%;border:2px solid #fff}
 
 .leaflet-control-attribution{background:rgba(12,22,20,.85) !important;color:#6f8983 !important;font-size:9px !important}
@@ -261,6 +279,7 @@ a{color:var(--amber)}
 
 <div id="legend">
   <div class="legend-i"><span class="legend-sw" style="border-color:#E8643A"></span>Drive</div>
+  <div class="legend-i"><span class="legend-sw dash" style="border-color:#3FB4A6"></span>Bike / boat</div>
   <div class="legend-i"><span class="legend-dot" style="background:#F2B33D"></span>Stop</div>
   <div class="legend-i"><span class="legend-dot" style="background:#132622;border-color:#E8643A"></span>Tonight's bed</div>
 </div>
@@ -283,7 +302,10 @@ window.TRIP_DATA = /*__TRIP_DATA__*/null;
   const BASEMAP_KEY = 'aotearoa-basemap';
   const MAX_CARDS = 4;
   const LEG_COLOURS = ['#E8643A', '#F2B33D', '#3FB4A6', '#7DA4E8', '#C77DFF', '#8FD0A8', '#f59a7a'];
-  const ICONS = { food: '🥧', walk: '🥾', drive: '🚗', activity: '🚲', booked: '🎟️', boat: '🚤', wine: '🍷', beach: '🏖️', view: '📷' };
+  const ICONS = { food: '🥧', walk: '🥾', hike: '🥾', tramp: '🥾', drive: '🚗', activity: '🎯', bike: '🚲', ride: '🚲', booked: '🎟️',
+    boat: '🚤', cruise: '🚤', ferry: '⛴️', kayak: '🛶', wine: '🍷', beach: '🏖️', view: '📷', swim: '🏊' };
+  const WX_DAYS = 16;                         // Open-Meteo's forecast horizon; the strip only shows inside it
+  const WX_TTL = 30 * 60 * 1000;              // re-fetch a town's forecast after 30 min
 
   const D = window.TRIP_DATA;
   const briefEl = document.getElementById('brief');
@@ -303,8 +325,12 @@ window.TRIP_DATA = /*__TRIP_DATA__*/null;
   DAYS.forEach(d => { if (d.leg && !LEGS.includes(d.leg)) LEGS.push(d.leg); });
   const legColour = leg => LEG_COLOURS[Math.max(0, LEGS.indexOf(leg)) % LEG_COLOURS.length];
 
-  const photoUrl = f => !f ? '' : /^https?:\/\//.test(f) ? f
-    : 'https://commons.wikimedia.org/wiki/Special:FilePath/' + encodeURIComponent(f) + '?width=760';
+  /* a place's photo: the direct thumbnail photos.py resolved, else the sheet's URL, else Commons by filename */
+  const photoUrl = p => p.photo_url || (!p.photo ? '' : /^https?:\/\//.test(p.photo) ? p.photo
+    : 'https://commons.wikimedia.org/wiki/Special:FilePath/' + encodeURIComponent(p.photo) + '?width=760');
+  /* crossorigin only for Wikimedia's image hosts, which answer with CORS headers: that lets sw.js cache the photo
+     offline without the padded quota of an opaque response. Other hosts load the ordinary way. */
+  const photoImg = p => { const u = photoUrl(p); return u ? `<img src="${esc(u)}" alt="" loading="lazy"${/^https:\/\/(upload|thumb)\.wikimedia\.org\//.test(u) ? ' crossorigin="anonymous"' : ''} onerror="this.style.display='none'">` : ''; };
   const iconFor = t => ICONS[(t || '').trim().toLowerCase()] || '📍';
   /* "📷 Artist · CC BY-SA 4.0" linking to the Commons file page, when photos.py found one */
   const credit = (p, cls) => {
@@ -321,6 +347,24 @@ window.TRIP_DATA = /*__TRIP_DATA__*/null;
   const dow = iso => fmt(iso, { weekday: 'short' });
   const dmon = iso => fmt(iso, { day: 'numeric', month: 'short' });
   const longDate = iso => fmt(iso, { weekday: 'long', day: 'numeric', month: 'long' });
+  /* today's date in New Zealand as YYYY-MM-DD, whatever clock the phone is on */
+  const nzToday = () => {
+    try { return new Intl.DateTimeFormat('en-CA', { timeZone: 'Pacific/Auckland', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()); }
+    catch (e) { return new Date().toISOString().slice(0, 10); }
+  };
+  const daysFrom = (a, b) => Math.round((dateOf(b) - dateOf(a)) / 864e5);   // whole days from ISO a to ISO b
+  /* a stop's link: the sheet's URL, or the word `tides` → NIWA's tide forecaster for that place on that day */
+  const isTides = s => /^tides$/i.test((s.link || '').trim());
+  const linkOf = (s, d) => {
+    if (!isTides(s)) return (s.link || '').trim();
+    const p = PLACES[s.place] || PLACES[d.to]; if (!p) return '';
+    return `https://tides.niwa.co.nz/?latitude=${p.at[0]}&longitude=${p.at[1]}${dateOf(d.date) ? `&startDate=${d.date}` : ''}&numberOfDays=2`;
+  };
+  const stopName = (s, d) => {
+    const url = linkOf(s, d); if (!url) return esc(s.name);
+    return `<a href="${esc(url)}" target="_blank" rel="noopener"${isTides(s) ? ' title="Tide times for the day (NIWA)"' : ''}>${esc(s.name)}${isTides(s) ? ' · 🌊 tides' : ''} ↗</a>`;
+  };
+  const isBooked = s => /^booked$/i.test((s.type || '').trim());
   const mins = t => {
     t = String(t || '');
     const h = /(\d+)\s*h\s*(\d*)/i.exec(t); if (h) return +h[1] * 60 + (+h[2] || 0);
@@ -335,10 +379,31 @@ window.TRIP_DATA = /*__TRIP_DATA__*/null;
   function dayPlaces(d) {
     const seq = [];
     const push = n => { if (n && PLACES[n] && seq[seq.length - 1] !== n) seq.push(n); };
-    push(d.from); d.stops.forEach(s => push(s.place)); push(d.to);
+    push(d.from); d.stops.forEach(s => { if (!s.spur) push(s.place); }); push(d.to);
     return seq;
   }
   const stopsAt = (d, name) => d.stops.filter(s => s.place === name);
+
+  /* legs we don't drive (a stop typed bike / boat / ... with a place): dashed from the last road place, never routed */
+  function daySpurs(d) {
+    const out = []; let anchor = PLACES[d.from] ? d.from : null;
+    d.stops.forEach(s => {
+      if (!s.place || !PLACES[s.place]) return;
+      if (s.spur) { if (anchor && anchor !== s.place) out.push({ from: anchor, to: s.place, s }); }
+      else anchor = s.place;
+    });
+    return out;
+  }
+  function drawSpurs(d, pts, weight, onClick) {
+    daySpurs(d).forEach(sp => {
+      const line = [PLACES[sp.from].at, PLACES[sp.to].at];
+      L.polyline(line, { color: '#0b1412', weight: weight + 3, opacity: .4, dashArray: '2 10', lineCap: 'round' }).addTo(layer);
+      const l = L.polyline(line, { color: '#3FB4A6', weight, opacity: .95, dashArray: '2 10', lineCap: 'round' })
+        .bindTooltip(`${iconFor(sp.s.type)} ${esc(sp.s.name)}`, { sticky: true }).addTo(layer);
+      if (onClick) l.on('click', onClick);
+      pts.push(line[1]);
+    });
+  }
 
   /* Google encoded polyline (precision 5) → [[lat, lng], ...] */
   function decodePoly(str) {
@@ -397,11 +462,11 @@ window.TRIP_DATA = /*__TRIP_DATA__*/null;
   const BASEMAPS = {
     satellite: { label: 'Sat', layer: L.layerGroup([
       L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-        { maxZoom: 17, attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics' }),
+        { maxZoom: 17, crossOrigin: 'anonymous', attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics' }),
       L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png',
-        { maxZoom: 19, subdomains: 'abcd', opacity: .85, attribution: cartoAttr })]) },
+        { maxZoom: 19, subdomains: 'abcd', opacity: .85, crossOrigin: 'anonymous', attribution: cartoAttr })]) },
     topo: { label: 'Topo', layer: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-      { maxZoom: 17, subdomains: 'abc', attribution: '&copy; <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA) &copy; OpenStreetMap' }) },
+      { maxZoom: 17, subdomains: 'abc', crossOrigin: 'anonymous', attribution: '&copy; <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA) &copy; OpenStreetMap' }) },
   };
   let baseKey = null;
   function setBasemap(key, remember) {
@@ -433,7 +498,18 @@ window.TRIP_DATA = /*__TRIP_DATA__*/null;
 
   /* ---- chrome that only depends on data ---- */
   const firstFrom = DAYS[0].from || DAYS[0].to;
-  document.getElementById('brand-d').textContent = `${DAYS.length} days · ${firstFrom} loop`;
+  /* where we are relative to the trip, by New Zealand's calendar: before, during or after */
+  function tripStatus() {
+    const first = DAYS[0].date, last = DAYS[DAYS.length - 1].date, today = nzToday();
+    if (!dateOf(first) || !dateOf(last) || !dateOf(today)) return null;
+    const toGo = daysFrom(today, first), since = daysFrom(last, today);
+    if (toGo > 0) return { text: toGo === 1 ? 'Tomorrow!' : `${toGo} days to go`, n: toGo, k: toGo === 1 ? 'day to go' : 'days to go' };
+    if (since > 0) return { text: 'Home again', n: since, k: since === 1 ? 'day home' : 'days home' };
+    const td = DAYS.find(d => d.date === today);
+    return td ? { text: `Day ${td.n} of ${DAYS.length}`, n: td.n, k: `of ${DAYS.length}` } : null;
+  }
+  const STATUS = tripStatus();
+  document.getElementById('brand-d').textContent = `${STATUS ? STATUS.text : DAYS.length + ' days'} · ${firstFrom} loop`;
   const sheetLink = document.getElementById('sheet-link');
   if (SHEET_URL) { sheetLink.href = SHEET_URL; sheetLink.hidden = false; }
 
@@ -452,11 +528,11 @@ window.TRIP_DATA = /*__TRIP_DATA__*/null;
   });
 
   /* ---- popups ---- */
-  function popHTML(p, kick, stops) {
-    const photo = photoUrl(p.photo);
-    const img = `<div class="pop-img">${photo ? `<img src="${esc(photo)}" alt="" loading="lazy" onerror="this.style.display='none'">` : ''}
+  function popHTML(p, kick, stops, d) {
+    const photo = photoUrl(p);
+    const img = `<div class="pop-img">${photoImg(p)}
       <div class="pop-cap"><div class="pop-kick">${esc(kick || p.kind || '')}</div><h3>${esc(p.name)}</h3></div></div>`;
-    const rows = (stops || []).map(s => `<div class="pop-row"><span class="ico">${iconFor(s.type)}</span><span>${s.link ? `<a href="${esc(s.link)}" target="_blank" rel="noopener">${esc(s.name)} ↗</a>` : esc(s.name)}${s.notes ? ` <span style="color:#7f9790">· ${esc(s.notes)}</span>` : ''}</span></div>`).join('');
+    const rows = (stops || []).map(s => `<div class="pop-row"><span class="ico">${iconFor(s.type)}</span><span>${stopName(s, d || {})}${s.notes ? ` <span style="color:#7f9790">· ${esc(s.notes)}</span>` : ''}</span></div>`).join('');
     const cred = photo ? `<div class="pop-cred">${credit(p, '') || 'Photo: Wikimedia Commons'}</div>` : '';
     return `<div class="pop">${img}<div class="pop-body">${p.blurb ? `<p>${esc(p.blurb)}</p>` : ''}${rows}
       <a class="pop-btn" href="${mapsUrl(p.at)}" target="_blank" rel="noopener">Maps ↗</a>${cred}</div></div>`;
@@ -489,6 +565,7 @@ window.TRIP_DATA = /*__TRIP_DATA__*/null;
           .bindTooltip(`Day ${d.n} · ${esc(d.from)} → ${esc(d.to)}${driveChip(d, ' · ')}`, { sticky: true })
           .on('click', () => render(DAYS.indexOf(d) + 1)).addTo(layer);
         path.forEach(p => pts.push(p));
+        drawSpurs(d, pts, 2.5, () => render(DAYS.indexOf(d) + 1));
       });
       const bs = beds();
       bs.forEach((b, idx) => {
@@ -509,12 +586,13 @@ window.TRIP_DATA = /*__TRIP_DATA__*/null;
           .bindTooltip(`${esc(d.from)} → ${esc(d.to)}${driveChip(d, ' · ')}`, { sticky: true }).addTo(layer);
       }
       path.forEach(p => pts.push(p));
+      drawSpurs(d, pts, 4);
 
       /* where we woke up, if it isn't also a numbered place */
       const cards = dayCards(d);
       if (PLACES[d.from] && !cards.some(c => c.name === d.from)) {
         L.marker(PLACES[d.from].at, { icon: pinIcon('pin-way', '', d.from), zIndexOffset: 80 })
-          .bindPopup(popHTML(PLACES[d.from], 'This morning', []), popOpts()).addTo(layer);
+          .bindPopup(popHTML(PLACES[d.from], 'This morning', [], d), popOpts()).addTo(layer);
         pts.push(PLACES[d.from].at);
       }
       /* numbered pins, matching the cards */
@@ -524,7 +602,7 @@ window.TRIP_DATA = /*__TRIP_DATA__*/null;
         c.at = c.p.at;
         // bed label sits below the dot; the halo's "Tonight" tag takes the space above it
         const m = L.marker(c.at, { icon: pinIcon(c.bed ? 'pin-bed' : 'pin-num', c.bed ? '🛏' : c.i, c.name, null, !c.bed), zIndexOffset: c.bed ? 800 : 700 })
-          .bindPopup(popHTML(c.p, kick, stops), popOpts()).addTo(layer);
+          .bindPopup(popHTML(c.p, kick, stops, d), popOpts()).addTo(layer);
         c.m = m; c.chips = stops.map(s => `${iconFor(s.type)} ${s.name}`);
         if (!c.chips.length && c.bed && d.drive_time) c.chips.push(`🚗 ${d.drive_time}`);
       });
@@ -563,14 +641,14 @@ window.TRIP_DATA = /*__TRIP_DATA__*/null;
     const box = document.getElementById('cards');
     box.innerHTML = '';
     activeCards.forEach((c, idx) => {
-      const p = c.p, photo = photoUrl(p.photo);
+      const p = c.p;
       const el = document.createElement('div');
       el.className = 'card'; el.style.animationDelay = idx * 70 + 'ms';
       el.innerHTML = `
         <div class="card-ph">
           <div class="card-badge${c.bed ? ' bed' : ''}">${c.bed ? '🛏' : c.i}</div>
           ${c.tag ? `<div class="card-tag">${esc(c.tag)}</div>` : ''}
-          ${photo ? `<img src="${esc(photo)}" alt="" loading="lazy" onerror="this.style.display='none'">` : ''}
+          ${photoImg(p)}
           <div class="card-name">${esc(c.name)}</div>
           ${credit(p, 'card-cred')}
         </div>
@@ -601,6 +679,7 @@ window.TRIP_DATA = /*__TRIP_DATA__*/null;
       briefEl.innerHTML = `<div class="brief-kick">${esc(when)}</div>
         <h2 class="brief-title">${DAYS.length} days around the island</h2>
         <div class="brief-stats">
+          ${STATUS ? `<div class="brief-stat" style="background:rgba(232,100,58,.2)"><div class="v">${STATUS.n}</div><div class="k">${esc(STATUS.k)}</div></div>` : ''}
           <div class="brief-stat"><div class="v">${DAYS.length}</div><div class="k">days</div></div>
           <div class="brief-stat"><div class="v">${towns.length}</div><div class="k">towns</div></div>
           ${drive ? `<div class="brief-stat"><div class="v">${hours(drive)}</div><div class="k">driving</div></div>` : ''}
@@ -617,12 +696,13 @@ window.TRIP_DATA = /*__TRIP_DATA__*/null;
     const stops = d.stops.map(s => {
       const c = activeCards.find(x => x.name === s.place);
       return `<li class="brief-stop${c ? ' has-place' : ''}" data-i="${c ? c.i : ''}"><span class="ico">${iconFor(s.type)}</span>
-        <span><span class="nm">${s.link ? `<a href="${esc(s.link)}" target="_blank" rel="noopener">${esc(s.name)} ↗</a>` : esc(s.name)}</span>${c ? `<span class="sp">${c.i}</span>` : ''}
+        <span><span class="nm">${stopName(s, d)}</span>${c ? `<span class="sp">${c.i}</span>` : ''}${isBooked(s) && BOOKINGS_URL ? `<a class="sp sp-bk" href="${BOOKINGS_URL}" target="_blank" rel="noopener" title="Booking details in the sheet">booked ↗</a>` : ''}
         ${s.notes ? `<div class="sn">${esc(s.notes)}</div>` : ''}</span></li>`;
     }).join('');
     briefEl.innerHTML = `<div class="brief-kick">${esc(kick)}</div>
       <h2 class="brief-title">${esc(d.title || `${d.from} → ${d.to}`)}</h2>
       <div class="brief-route">${route}${driveText(d) ? `<span class="brief-chip">🚗 ${driveText(d)}</span>` : ''}</div>
+      <div class="brief-wx" id="brief-wx" hidden></div>
       ${d.notes ? `<p class="brief-notes">${esc(d.notes)}</p>` : ''}
       ${stops ? `<div class="brief-h">Stops</div><ul class="brief-stops">${stops}</ul>` : ''}
       ${d.to ? `<div class="brief-bed">🛏 Sleeping in <b>${esc(d.to)}</b>${BOOKINGS_URL ? ` · <a href="${BOOKINGS_URL}" target="_blank" rel="noopener">booking details ↗</a>` : ''}</div>` : ''}
@@ -634,6 +714,41 @@ window.TRIP_DATA = /*__TRIP_DATA__*/null;
       if (c.m) map.once('moveend', () => setTimeout(() => c.m.openPopup(), 40));
     });
     briefEl.scrollTop = 0;
+    paintWeather(d);
+  }
+
+  /* ---- weather: Open-Meteo for tonight's town, only once the day is inside the forecast window ---- */
+  const WMO = [[0, '☀️', 'Clear'], [1, '🌤️', 'Mostly clear'], [2, '⛅', 'Partly cloudy'], [3, '☁️', 'Overcast'], [45, '🌫️', 'Fog'], [48, '🌫️', 'Fog'],
+    [51, '🌦️', 'Drizzle'], [53, '🌦️', 'Drizzle'], [55, '🌧️', 'Drizzle'], [56, '🌧️', 'Freezing drizzle'], [57, '🌧️', 'Freezing drizzle'],
+    [61, '🌧️', 'Light rain'], [63, '🌧️', 'Rain'], [65, '🌧️', 'Heavy rain'], [66, '🌧️', 'Freezing rain'], [67, '🌧️', 'Freezing rain'],
+    [71, '🌨️', 'Light snow'], [73, '🌨️', 'Snow'], [75, '❄️', 'Heavy snow'], [77, '🌨️', 'Snow grains'], [80, '🌦️', 'Showers'], [81, '🌧️', 'Showers'],
+    [82, '⛈️', 'Heavy showers'], [85, '🌨️', 'Snow showers'], [86, '🌨️', 'Snow showers'], [95, '⛈️', 'Thunderstorm'], [96, '⛈️', 'Thunder and hail'], [99, '⛈️', 'Thunder and hail']];
+  const wmo = c => { const m = WMO.find(w => w[0] === c) || [0, '🌡️', '']; return { icon: m[1], text: m[2] }; };
+  async function forecast(p) {                // daily forecast for a place; cached in this browser for WX_TTL
+    const key = 'aotearoa-wx:' + p.name;
+    try { const c = JSON.parse(localStorage.getItem(key)); if (c && Date.now() - c.t < WX_TTL) return c.data; } catch (e) { /* no cache */ }
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${p.at[0]}&longitude=${p.at[1]}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max&timezone=Pacific%2FAuckland&forecast_days=${WX_DAYS}`;
+    const r = await fetch(url); if (!r.ok) throw new Error('open-meteo ' + r.status);
+    const data = (await r.json()).daily;
+    try { localStorage.setItem(key, JSON.stringify({ t: Date.now(), data })); } catch (e) { /* private mode */ }
+    return data;
+  }
+  function paintWeather(d) {
+    const el = document.getElementById('brief-wx'); if (!el) return;
+    const p = PLACES[d.to] || PLACES[d.from], today = nzToday();
+    if (!p || !dateOf(d.date) || !dateOf(today)) return;
+    const off = daysFrom(today, d.date);
+    if (off < 0 || off >= WX_DAYS) return;      // past, or too far out to forecast
+    const want = cur;
+    forecast(p).then(w => {
+      if (cur !== want) return;                 // the user has moved on
+      const i = w.time.indexOf(d.date); if (i < 0) return;
+      const c = wmo(w.weather_code[i]);
+      el.innerHTML = `<span class="wx-ico">${c.icon}</span><span class="wx-t">${Math.round(w.temperature_2m_max[i])}°<small> / ${Math.round(w.temperature_2m_min[i])}°</small></span>
+        <span class="wx-x">${esc(c.text)} · ${w.precipitation_probability_max[i]}% chance of rain, ${Math.round(w.precipitation_sum[i])} mm · 💨 ${Math.round(w.wind_speed_10m_max[i])} km/h</span>
+        <span class="wx-k">Forecast for ${esc(p.name)} · ${off === 0 ? 'today' : off === 1 ? 'tomorrow' : 'in ' + off + ' days'}</span>`;
+      el.hidden = false;
+    }).catch(() => { /* offline or the API is down: the strip just stays hidden */ });
   }
 
   /* ---- nav ---- */
@@ -656,12 +771,17 @@ window.TRIP_DATA = /*__TRIP_DATA__*/null;
   function startView() {
     const m = /^#day-(\d+)$/.exec(location.hash);
     if (m) { const i = DAYS.findIndex(d => d.n === +m[1]); if (i >= 0) return i + 1; }
-    const today = new Date().toISOString().slice(0, 10);
+    const today = nzToday();
     const i = DAYS.findIndex(d => d.date === today);
     return i >= 0 ? i + 1 : 0;
   }
   render(startView());
   setTimeout(() => render(cur), 250);   // once fonts and layout have settled, refit
+
+  /* ---- offline: sw.js keeps this page, Leaflet and every tile and photo you've looked at ---- */
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+    navigator.serviceWorker.register('sw.js').catch(() => { /* not fatal */ });
+  }
 })();
 </script>
 </body>

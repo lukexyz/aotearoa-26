@@ -95,8 +95,10 @@ column ever appears in the `days` tab. Belt and braces against someone
 | `data/routes.json`            | cache of OSRM answers, keyed by coordinates       |
 | `scripts/photos.py`           | finds a Wikipedia photo per place → `data.json`   |
 | `data/photos.json`            | cache of photo picks and credits, keyed by name   |
-| `scripts/build.py`            | `site/` + data → `dist/`                          |
+| `scripts/build.py`            | `site/` + data → `dist/`, stamps the worker       |
 | `site/index.html`             | the page: Leaflet map, day nav, brief, cards      |
+| `site/sw.js`                  | service worker: page, Leaflet, tiles offline      |
+| `site/manifest.webmanifest`   | home-screen install; icons from `make_icons.py`   |
 | `.github/workflows/build.yml` | nightly + manual build and Pages deploy           |
 | `PLAN.md`                     | phased build plan, ticked off as work lands       |
 | `scripts/seed_sheet.py`       | one-off: CSVs → sheet tabs (robot key, Editor)    |
@@ -178,9 +180,9 @@ page changes. Then reverted.
       next touching the workflow.
 - [x] `seed_sheet.py --create` left in place with a comment saying why it's parked.
 - [x] Phase 3, road routes. Shipped 2026-09-03, see below. Dashed spurs for
-      the bike and boat legs still to do.
-- [ ] Phases 4 to 6 per PLAN.md: weather and countdown, offline PWA, final
-      basemap pick.
+      the bike and boat legs landed the same day.
+- [x] Phases 4 and 5: countdown, weather, tide link, offline. 2026-09-03.
+- [ ] Phase 6: final basemap pick, retrospective, share the link.
 
 ### Things to remember
 
@@ -290,9 +292,10 @@ sheet's 3h45. Added the stops row and the line now goes over the hill to the
 beach. The rule, now in the README: a detour you want drawn needs a stops row
 with a `place`, not just a mention in the notes.
 
-Not done: the non-driving legs. Nelson → Mapua is a bike ride, Manapouri →
-Doubtful Sound is a boat, and both are currently drawn as the road OSRM would
-drive. Dashed spurs from `stops.type` are the last Phase 3 item.
+Not done at the time: the non-driving legs. Nelson → Mapua is a bike ride,
+Manapouri → Doubtful Sound is a boat, and both were drawn as the road OSRM
+would drive. Dashed spurs from `stops.type` landed later the same day, see
+below.
 
 Tested: local build, `node --check` on the inlined script, headless
 screenshots of the overview, day 7 (over Haast Pass) and day 10.
@@ -325,3 +328,63 @@ Westport's municipal chambers). For a road trip page the sheet's `wiki:`
 override is the fix: `wiki:Doubtful Sound` for Manapouri, `wiki:Pancake Rocks`
 for Punakaiki, and so on. The README's Photos section is the explainer for
 whoever changes the sheet.
+
+## 2026-09-03: spurs, live bits, and the car with no signal
+
+Phases 3 (the leftover), 4 and 5 in one sitting.
+
+**Spurs.** A stop typed `bike`, `boat`, `ferry` and so on is a leg we don't
+drive. `fetch_sheet.py` tags it `spur: true` (one list, `SPUR_TYPES`, one
+place); `routes.py` leaves it out of the road sequence and the page draws a
+dashed teal line from the last road place to the stop's place. The anchor
+rule matters: day 2 is Wanaka → Cromwell (drive) → Clyde (bike) → Queenstown
+(drive), so the drive has to resume from Cromwell, not Clyde. The sheet got
+two extra rows for that (an e-bike pickup at Cromwell, a check-in at
+Manapouri) and a `Doubtful Sound` place, because a spur needs somewhere to
+point at. Straight dashed lines, not routed: a boat across a lake doesn't
+follow anything OSRM knows.
+
+**Countdown.** By New Zealand's calendar via `Intl.DateTimeFormat` with
+`timeZone: 'Pacific/Auckland'`, which also fixed a latent bug: "open on
+today's day" was using the UTC date, which is yesterday for most of a New
+Zealand evening.
+
+**Weather.** Open-Meteo, no key, 16 days out (the plan said 7; the API does
+16). Fetched by the phone, not at build time, cached 30 minutes in
+`localStorage` per town. The strip only appears once the day is inside the
+window, so today it shows nothing, and it stays hidden offline. Tested with a
+copy of the built page with the dates shifted to next week.
+
+**Tides.** LINZ has no per-day URL. NIWA's tide forecaster is an Angular app
+that, per its bundle, reads `latitude`, `longitude`, `startDate` and
+`numberOfDays` from the query string. So `link = tides` on a stop builds that
+URL from the place's coordinates and the day's date. If the day moves, the
+link moves.
+
+**Offline.** `sw.js`, about 80 lines. Page network-first with a 4 s timeout
+then cache; Leaflet cache-first; tiles and photos cache-first as viewed,
+capped at 2,500, oldest dropped. `build.py` stamps a hash of the page into
+the worker so each deploy replaces the page cache; the tile cache survives.
+Verified headless: install over two loads, then relaunch Chrome with every
+hostname mapped to 127.0.0.1. Page, brief, photos and the tiles for day 7 all
+came from cache.
+
+Two lessons from the offline work:
+
+- **Opaque responses are poison in Cache Storage.** A no-cors image or tile
+  is stored with its size padded to megabytes for quota accounting, so a few
+  hundred tiles would blow the budget. Every tile host (Esri, CARTO,
+  OpenTopoMap) and Wikimedia send `Access-Control-Allow-Origin: *`, so the
+  layers use `crossOrigin: 'anonymous'` and the worker refuses to cache
+  anything opaque.
+- **`Special:FilePath` breaks CORS.** It's a redirect, and the redirect hop
+  carries no CORS header, so a `crossorigin` image dies there. `photos.py`
+  now stores the direct thumbnail URL from the API (`iiurlwidth`), which
+  lives on `thumb.wikimedia.org` and answers with CORS directly. Bonus
+  finding: Commons now rejects arbitrary thumbnail widths (a 760px request
+  gets a 400 pointing at a list of allowed sizes), so use whatever the API
+  hands back rather than composing URLs.
+
+Not done, deliberately: no "update available" toast. The page is
+network-first, so a stale page only survives while there's no signal, which
+is exactly when a toast couldn't help.

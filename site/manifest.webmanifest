@@ -1,0 +1,16 @@
+{
+  "name": "Aotearoa 2026 · South Island road trip",
+  "short_name": "Aotearoa 26",
+  "description": "Day-by-day map of the South Island loop. Works offline once viewed.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0c1614",
+  "theme_color": "#0c1614",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -58,6 +58,7 @@ python scripts/fetch_sheet.py --check     # validate the sheet without writing a
 python scripts/fetch_sheet.py --dump      # copy the sheet's exported tabs back into data/*.csv
 python scripts/routes.py                  # make the drives follow the road (OSRM); commit data/routes.json after
 python scripts/photos.py --preview        # find a photo per place; opens as photos-preview.html; commit data/photos.json
+python scripts/make_icons.py              # only if you change the home-screen icon
 python scripts/build.py
 python -m http.server -d dist 8000        # open http://localhost:8000
 ```
@@ -67,18 +68,54 @@ with `--dump`, and is what CI builds from if the sheet secrets are missing.
 
 ## The page
 
-One file, `site/index.html`. Leaflet map with a basemap switcher (satellite,
-OpenTopoMap; the choice is remembered per browser).
-Overview shows the whole loop with a pin per town; each day shows the drive
-along the actual road, numbered pins for the stops that have a `place`,
-tonight's town with a halo, and photo cards on the right. The drive is routed
-through the stops that have a `place`, so a detour you want drawn (and timed)
-needs a stops row, not just a mention in the notes. Below 760px the map sits on top and the rest
-scrolls underneath. `#day-7` in the URL opens that day; during the trip the
-page opens on today.
+One file, `site/index.html`, plus `site/sw.js` for offline. Leaflet map with
+a basemap switcher (satellite, OpenTopoMap; the choice is remembered per
+browser). Overview shows the whole loop with a pin per town; each day shows
+the drive along the actual road, numbered pins for the stops that have a
+`place`, tonight's town with a halo, and photo cards on the right. Below
+760px the map sits on top and the rest scrolls underneath. `#day-7` in the
+URL opens that day; during the trip the page opens on today (by New Zealand's
+calendar, whatever the phone's clock says).
+
+Things the sheet controls that aren't obvious:
+
+- **The drive is routed through the stops that have a `place`**, so a detour
+  you want drawn (and timed) needs a stops row, not just a mention in the
+  notes.
+- **A stop typed `bike`, `boat`, `ferry`, `cruise`, `kayak`, `hike`, `tramp`
+  or `ride` is not driven.** It's drawn as a dashed spur from the last road
+  place to the stop's `place`, and the drive carries on from where it was.
+  Day 9's ride to Mapua and day 6's boat to Doubtful Sound work this way.
+- **`link` = `tides`** on a stop turns its name into a link to NIWA's tide
+  forecaster for that place on that day. Used for the Pancake Rocks blowholes.
+- **`type` = `booked`** adds a "booked ↗" chip that opens the bookings tab.
+- **Countdown**: the top bar and overview say how many days to go, then
+  "Day N of 11" during the trip. Needs `days.date` on day 1, nothing else.
+- **Weather**: once a day is inside Open-Meteo's 16-day window, its brief
+  shows the forecast for tonight's town (fetched by the phone, cached for 30
+  minutes, hidden when offline). Nothing to configure.
 
 Nothing about the South Island is written into the HTML. Change the sheet and
 the map follows.
+
+## On the phone, offline
+
+The page is installable: *Add to Home Screen* on iOS Safari, or the install
+prompt in Chrome on Android. Either way it opens full-screen without browser
+chrome, and a service worker keeps it working with no signal:
+
+- **The page itself** is cached on every visit and served from the cache
+  when the network is slow or gone, so the brief, stops and route for every
+  day are always readable.
+- **Map tiles and photos** are cached as you look at them (up to about
+  2,500 tiles, oldest dropped first). Nothing is downloaded in advance: the
+  corridors for a 1,700 km loop would be far too big. **Look at the day's map
+  with signal the night before** and it will be there in the car.
+- **Updates**: when the site rebuilds, phones pick up the new page the next
+  time they open it with signal. The tile cache survives updates.
+
+`scripts/build.py` stamps a hash of the built page into `sw.js`, which is
+what makes a rebuild replace the cached page on phones.
 
 ## Photos
 
