@@ -232,7 +232,9 @@ def main() -> None:
         cell = p["photo_src"]
         n = p["name"]
         if cell and not cell.lower().startswith("wiki:"):
-            resolved[n] = cell
+            # a Commons filename pasted with spaces ("Lake Pukaki 21.jpg") is the same file as the
+            # underscored form the credit lookup keys on, so normalise it here
+            resolved[n] = cell if cell.startswith("http") else cell.replace(" ", "_")
         else:
             resolved[n] = cache.get(n, {}).get("file", "")
 
