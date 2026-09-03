@@ -64,8 +64,9 @@ a{color:var(--amber)}
   text-transform:uppercase;color:var(--muted);white-space:nowrap;min-height:28px}
 .base-btn:hover{color:var(--cream);background:rgba(255,255,255,.08)}
 .base-btn.on{background:var(--amber);color:#1a1206}
-.top-btn{padding:8px 12px;border-radius:8px;background:rgba(255,255,255,.06);font-size:11px;font-weight:700;
+.top-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:8px;background:rgba(255,255,255,.06);font-size:11px;font-weight:700;
   letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-decoration:none;white-space:nowrap;transition:.15s}
+.top-btn .lock{flex:0 0 auto;opacity:.85}
 .top-btn:hover{background:rgba(255,255,255,.13);color:var(--cream)}
 
 /* ================= BRIEF ================= */
@@ -283,7 +284,9 @@ a{color:var(--amber)}
   </div>
   <div id="topright">
     <div class="base-switch" id="base-switch" role="group" aria-label="Map style"></div>
-    <a class="top-btn" id="sheet-link" target="_blank" rel="noopener" hidden>Sheet ↗</a>
+    <a class="top-btn" id="sheet-link" target="_blank" rel="noopener" hidden title="Private: only people invited to the sheet can open it">
+      <svg class="lock" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      <span>Sheet ↗</span></a>
   </div>
 </div>
 
