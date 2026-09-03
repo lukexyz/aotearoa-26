@@ -16,8 +16,8 @@
   "from": "Doubtful Sound / Patea"
  },
  "Franz Josef": {
-  "file": "Franz_Josef_village_and_valley_from_Alex_Knob.jpg",
-  "from": "Franz Josef / Waiau"
+  "file": "Franz_josef_Glacier_LC0250.jpg",
+  "from": "Franz Josef Glacier"
  },
  "Gibbston Valley": {
   "file": "Vineyard_in_Gibbston_Valley_in_South_Island,_New_Zealand_-_Central_Otago_wine_region.jpg",
@@ -72,8 +72,8 @@
   "from": "Marlborough wine region"
  },
  "Te Anau": {
-  "file": "Te_Anau_and_Murchison_Mountains.jpg",
-  "from": "Te Anau"
+  "file": "On_Lake_Te_Anau.jpg",
+  "from": "Lake Te Anau"
  },
  "Wakefield": {
   "file": "Wakefield_Main_Street.JPG",
@@ -117,6 +117,11 @@
    "credit": "Pseudopanax at English Wikipedia · Public domain",
    "page": "https://commons.wikimedia.org/wiki/File:Franz_Josef_village_and_valley_from_Alex_Knob.jpg",
    "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e3/Franz_Josef_village_and_valley_from_Alex_Knob.jpg/960px-Franz_Josef_village_and_valley_from_Alex_Knob.jpg"
+  },
+  "Franz_josef_Glacier_LC0250.jpg": {
+   "credit": "Jörg Hempel · CC BY-SA 3.0 de",
+   "page": "https://commons.wikimedia.org/wiki/File:Franz_josef_Glacier_LC0250.jpg",
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3a/Franz_josef_Glacier_LC0250.jpg/960px-Franz_josef_Glacier_LC0250.jpg"
   },
   "Haast_Pass_-_vyhlídka_-_panoramio.jpg": {
    "credit": "Pavel Špindler · CC BY 3.0",
@@ -167,6 +172,11 @@
    "credit": "Markus Koljonen (Dilaudid) · CC BY-SA 3.0",
    "page": "https://commons.wikimedia.org/wiki/File:Nelson_New_Zealand.jpg",
    "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/08/Nelson_New_Zealand.jpg/960px-Nelson_New_Zealand.jpg"
+  },
+  "On_Lake_Te_Anau.jpg": {
+   "credit": "CC BY 2.5",
+   "page": "https://commons.wikimedia.org/wiki/File:On_Lake_Te_Anau.jpg",
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8d/On_Lake_Te_Anau.jpg/960px-On_Lake_Te_Anau.jpg"
   },
   "Queenstown_1_(8168013172).jpg": {
    "credit": "Bernard Spragg. NZ from Christchurch, New Zealand · CC0",
