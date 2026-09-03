@@ -576,6 +576,21 @@ window.TRIP_DATA = /*__TRIP_DATA__*/null;
         path.forEach(p => pts.push(p));
         drawSpurs(d, pts, 2.5, () => render(DAYS.indexOf(d) + 1));
       });
+      /* the activities: one small dot per place that has a stop, hover for what and when, click for the day */
+      const dots = {};
+      DAYS.forEach((d, i) => d.stops.forEach(st => {
+        if (!st.place || !PLACES[st.place] || DAYS.some(x => x.to === st.place)) return;   // bed towns have a pin already
+        (dots[st.place] = dots[st.place] || { p: PLACES[st.place], days: [], names: [] });
+        if (!dots[st.place].days.includes(i)) dots[st.place].days.push(i);
+        dots[st.place].names.push(st.name);
+      }));
+      Object.keys(dots).forEach(name => {
+        const o = dots[name];
+        const when = o.days.map(i => 'Day ' + DAYS[i].n).join(', ');
+        L.circleMarker(o.p.at, { radius: 4.5, color: '#0b1412', weight: 1.5, fillColor: '#F2B33D', fillOpacity: 1, bubblingMouseEvents: false })
+          .bindTooltip(`<b>${esc(name)}</b> · ${esc(when)}<br><span style="font-weight:600;color:#c6d5cf">${esc(o.names.join(', '))}</span>`, { direction: 'top', offset: [0, -6] })
+          .on('click', () => render(o.days[0] + 1)).addTo(layer);
+      });
       const bs = beds();
       bs.forEach((b, idx) => {
         const start = b.name === firstFrom;
