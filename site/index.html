@@ -154,6 +154,25 @@ a{color:var(--amber)}
   background:rgba(12,22,20,.6);padding:2px 5px;border-radius:4px;text-decoration:none;max-width:55%;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .card-cred:hover{color:var(--amber)}
+.card-badge,.card-tag,.card-name{z-index:2}
+/* several photos for one place: cross-fading slides, back/forward, dots, and the year each was taken */
+.slides{position:absolute;inset:0}
+.slides .slide{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .7s}
+.slides .slide.on{opacity:1}
+.sl-btn{position:absolute;top:50%;transform:translateY(-50%);z-index:3;width:24px;height:24px;border-radius:50%;
+  background:rgba(12,22,20,.6);border:1px solid rgba(244,239,231,.25);color:var(--cream);font-size:17px;line-height:1;
+  display:grid;place-items:center;padding:0 0 2px;opacity:.8;transition:.15s;cursor:pointer}
+.sl-btn:hover{opacity:1;background:rgba(242,179,61,.9);color:#1a1206}
+.sl-prev{left:6px}.sl-next{right:6px}
+.sl-dots{position:absolute;left:50%;transform:translateX(-50%);bottom:7px;z-index:3;display:flex;gap:4px;pointer-events:none}
+.sl-dots i{width:5px;height:5px;border-radius:50%;background:rgba(244,239,231,.5);box-shadow:0 0 3px rgba(0,0,0,.8)}
+.sl-dots i.on{background:var(--amber)}
+.sl-year{position:absolute;right:8px;top:8px;z-index:3;padding:3px 6px;border-radius:5px;background:rgba(12,22,20,.78);
+  color:var(--cream);font-size:9.5px;font-weight:800;letter-spacing:.06em;font-variant-numeric:tabular-nums;pointer-events:none}
+.sl-year[hidden]{display:none}
+.card-ph:has(.sl-year:not([hidden])) .card-tag{top:30px}
+.cred[data-i]:not(.on){display:none}
+@media (prefers-reduced-motion:reduce){.slides .slide{transition:none}}
 .card-meta{flex:0 0 auto;padding:8px 11px 10px}
 .card-blurb{font-size:11.5px;color:#bccbc5;line-height:1.45}
 .card-chips{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
@@ -356,14 +375,54 @@ window.TRIP_DATA = /*__TRIP_DATA__*/null;
     : 'https://commons.wikimedia.org/wiki/Special:FilePath/' + encodeURIComponent(p.photo) + '?width=760');
   /* crossorigin only for Wikimedia's image hosts, which answer with CORS headers: that lets sw.js cache the photo
      offline without the padded quota of an opaque response. Other hosts load the ordinary way. */
-  const photoImg = p => { const u = photoUrl(p); return u ? `<img src="${esc(u)}" alt="" loading="lazy"${/^https:\/\/(upload|thumb)\.wikimedia\.org\//.test(u) ? ' crossorigin="anonymous"' : ''} onerror="this.style.display='none'">` : ''; };
+  const cors = u => /^https:\/\/(upload|thumb)\.wikimedia\.org\//.test(u) ? ' crossorigin="anonymous"' : '';
+  const commonsUrl = f => 'https://commons.wikimedia.org/wiki/Special:FilePath/' + encodeURIComponent(f) + '?width=760';
+  /* every photo for a place: the photos[] list from photos.py, else the flat fields (older data.json) */
+  const photosOf = p => (p.photos && p.photos.length)
+    ? p.photos.map(c => ({ ...c, url: c.url || (/^https?:\/\//.test(c.file) ? c.file : commonsUrl(c.file)) }))
+    : (photoUrl(p) ? [{ file: p.photo, url: photoUrl(p), credit: p.photo_credit, page: p.photo_page, year: '' }] : []);
+  /* one <img>, or for several photos a slideshow: cross-fading slides, ‹ › buttons, dots, and the year each was taken
+     (the glacier photos are years apart, and that is the point of showing both) */
+  const photoImg = p => {
+    const ph = photosOf(p);
+    if (!ph.length) return '';
+    if (ph.length === 1) return `<img src="${esc(ph[0].url)}" alt="" loading="lazy"${cors(ph[0].url)} onerror="this.style.display='none'">`;
+    return `<div class="slides" data-i="0" data-n="${ph.length}">${ph.map((c, i) =>
+        `<img class="slide${i ? '' : ' on'}" data-year="${esc(c.year || '')}" src="${esc(c.url)}" alt="" loading="lazy"${cors(c.url)} onerror="this.style.display='none'">`).join('')}
+      <button class="sl-btn sl-prev" type="button" aria-label="Previous photo" onclick="slide(this,-1);event.stopPropagation()">‹</button>
+      <button class="sl-btn sl-next" type="button" aria-label="Next photo" onclick="slide(this,1);event.stopPropagation()">›</button>
+      <span class="sl-year"${ph[0].year ? '' : ' hidden'}>${esc(ph[0].year || '')}</span>
+      <div class="sl-dots">${ph.map((_, i) => `<i${i ? '' : ' class="on"'}></i>`).join('')}</div></div>`;
+  };
+  function goSlide(box, i, manual) {
+    const n = +box.dataset.n; i = (i + n) % n; box.dataset.i = i;
+    const imgs = box.querySelectorAll('.slide');
+    imgs.forEach((el, k) => el.classList.toggle('on', k === i));
+    box.querySelectorAll('.sl-dots i').forEach((el, k) => el.classList.toggle('on', k === i));
+    const y = box.querySelector('.sl-year'), v = imgs[i].dataset.year || '';
+    if (y) { y.textContent = v; y.hidden = !v; }
+    const root = box.closest('.card, .pop');                     // the credit line follows the slide
+    if (root) root.querySelectorAll('.cred[data-i]').forEach(el => el.classList.toggle('on', +el.dataset.i === i));
+    if (manual) box.dataset.hold = Date.now() + 9000;           // a click pauses the auto-advance for a while
+  }
+  window.slide = (btn, dir) => { const box = btn.closest('.slides'); goSlide(box, +box.dataset.i + dir, true); };
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    setInterval(() => { const now = Date.now(); document.querySelectorAll('.slides').forEach(box => {
+      if (+box.dataset.hold > now || box.matches(':hover')) return;
+      goSlide(box, +box.dataset.i + 1, false); }); }, 4500);
+  }
   const iconFor = t => ICONS[(t || '').trim().toLowerCase()] || '📍';
-  /* "📷 Artist · CC BY-SA 4.0" linking to the Commons file page, when photos.py found one */
+  /* "📷 Artist · CC BY-SA 4.0" linking to the Commons file page, when photos.py found one; with several photos
+     each slide has its own credit and goSlide swaps them */
   const credit = (p, cls) => {
-    if (!p.photo || !(p.photo_credit || p.photo_page)) return '';
-    const text = '📷 ' + esc(p.photo_credit || 'Wikimedia Commons');
-    return p.photo_page ? `<a class="${cls}" href="${esc(p.photo_page)}" target="_blank" rel="noopener" title="Photo credit" onclick="event.stopPropagation()">${text}</a>`
-                        : `<span class="${cls}">${text}</span>`;
+    const ph = photosOf(p), multi = ph.length > 1;
+    return ph.map((c, i) => {
+      if (!c.file || !(c.credit || c.page)) return '';
+      const text = '📷 ' + esc(c.credit || 'Wikimedia Commons');
+      const cl = multi ? `${cls} cred${i ? '' : ' on'}`.trim() : cls, k = multi ? ` data-i="${i}"` : '';
+      return c.page ? `<a class="${cl}"${k} href="${esc(c.page)}" target="_blank" rel="noopener" title="Photo credit" onclick="event.stopPropagation()">${text}</a>`
+                    : `<span class="${cl}"${k}>${text}</span>`;
+    }).join('');
   };
   /* inline icons: emoji render differently (or badly) per platform, these don't */
   const BED = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-label="bed"><path d="M4 5a1 1 0 0 1 1 1v6h6V8.5A1.5 1.5 0 0 1 12.5 7H18a3 3 0 0 1 3 3v8a1 1 0 1 1-2 0v-2H5v2a1 1 0 1 1-2 0V6a1 1 0 0 1 1-1zm3 2.5A1.75 1.75 0 1 1 7 11a1.75 1.75 0 0 1 0-3.5z"/></svg>';
@@ -558,7 +617,7 @@ window.TRIP_DATA = /*__TRIP_DATA__*/null;
 
   /* ---- popups ---- */
   function popHTML(p, kick, stops, d) {
-    const photo = photoUrl(p);
+    const photo = photosOf(p).length;
     const img = `<div class="pop-img">${photoImg(p)}
       <div class="pop-cap"><div class="pop-kick">${esc(kick || p.kind || '')}</div><h3>${esc(p.name)}</h3></div></div>`;
     const rows = (stops || []).map(s => `<div class="pop-row"><span class="ico">${iconFor(s.type)}</span><span>${stopName(s, d || {})}${s.notes ? ` <span style="color:#7f9790">· ${esc(s.notes)}</span>` : ''}</span></div>`).join('');

@@ -43,7 +43,7 @@ must match a `name` here exactly.
 | lat    | -42.1103                                 | decimal degrees                                    |
 | lng    | 171.3315                                 |                                                    |
 | kind   | city / town / stop                       | town = somewhere we sleep, stop = somewhere we pass |
-| photo  | (blank) or `wiki:Doubtful Sound`         | optional. Blank = found automatically from Wikipedia. Or `wiki:Article title`, a Commons filename, an image URL, or `-` for none. See README → Photos |
+| photo  | (blank) or `wiki:Doubtful Sound`         | optional. Blank = found automatically from Wikipedia. Or `wiki:Article title`, a Commons filename, an image URL, or `-` for none. Several separated by `\|` make a slideshow. See README → Photos |
 | blurb  | Pancake Rocks and the Truman Track       | optional, one line for the card                    |
 
 Grab coordinates by right-clicking a spot in Google Maps and clicking the

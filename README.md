@@ -137,6 +137,7 @@ and uses the article's lead image. Picks are cached in `data/photos.json`.
   | `wiki:Doubtful Sound`           | lead image of that Wikipedia article. Easiest.            |
   | `Doubtful_Sound_Clear.jpg`      | that exact Wikimedia Commons file (the name after `File:`) |
   | `https://…/something.jpg`       | any image URL, used as-is (no credit shown)               |
+  | `Glacier_2005.jpg \| Glacier_2014.jpg` | several, separated by `\|`: the card cycles through them with back/forward buttons and the year each was taken |
 
   The sheet always wins over the automatic pick.
 - **Want a fresh automatic pick** (say the article changed its image):

@@ -31,6 +31,8 @@ What goes into data.json for each place:
     photo_credit  "Artist · CC BY-SA 4.0", when known
     photo_page    the Commons file page, for the credit link
     photo_url     direct thumbnail URL on upload.wikimedia.org (the page falls back to Special:FilePath without it)
+    photos        every photo for the place as [{file, url, credit, page, year}]; the cell can list several with "|"
+                  and the card then cycles through them, showing the year each was taken
 """
 from __future__ import annotations
 
@@ -148,7 +150,7 @@ def credits(files: list[str]) -> dict[str, dict]:
         chunk = files[i:i + BATCH]
         body = api(COMMONS_API, {"action": "query", "titles": "|".join("File:" + f for f in chunk), "redirects": 1,
                                  "prop": "imageinfo", "iiprop": "extmetadata|url", "iiurlwidth": THUMB_WIDTH,
-                                 "iiextmetadatafilter": "Artist|LicenseShortName|Credit"})
+                                 "iiextmetadatafilter": "Artist|LicenseShortName|Credit|DateTimeOriginal|DateTime"})
         if not body:
             continue
         for p in body.get("query", {}).get("pages", []):
@@ -160,8 +162,12 @@ def credits(files: list[str]) -> dict[str, dict]:
             lic = meta.get("LicenseShortName", {}).get("value", "").strip()
             credit = " · ".join(x for x in (artist, lic) if x)
             fname = p["title"].split(":", 1)[-1].replace(" ", "_")
+            # the year the photo was taken (the glacier cards show it): EXIF first, then the upload date
+            taken = meta.get("DateTimeOriginal", {}).get("value", "") or meta.get("DateTime", {}).get("value", "")
+            year = re.search(r"\b(19|20)\d\d\b", taken)
             out[fname] = {"credit": credit, "page": info.get("descriptionurl", ""),
-                          "url": (info.get("thumburl") or info.get("url", "")).split("?")[0]}   # drop utm_ tracking
+                          "url": (info.get("thumburl") or info.get("url", "")).split("?")[0],   # drop utm_ tracking
+                          "year": year.group(0) if year else ""}
     return out
 
 
@@ -192,16 +198,23 @@ def main() -> None:
 
     # 1. work out which places need an article lookup (blank cell, or a wiki: override), batched
     wanted: dict[str, list[str]] = {}          # place → candidate titles in preference order
+    # a cell may hold several photos separated by "|" (the card cycles through them); a wiki: part in
+    # a list is cached under "Place|index" so each part keeps its own lookup
+    parts_of = lambda cell: [x.strip() for x in cell.split("|") if x.strip()]
+    cache_key = lambda n, parts, i: n if len(parts) == 1 else f"{n}|{i}"
     for p in places:
         # the sheet's cell; kept in photo_src so running this script twice is harmless
         p["photo_src"] = (p["photo_src"] if "photo_src" in p else p.get("photo") or "").strip()
         cell = p["photo_src"]
         n = p["name"]
-        if cell.lower().startswith("wiki:"):
-            title = cell[5:].strip()
-            if cache.get(n, {}).get("from") != title:
-                wanted[n] = [title]
-        elif not cell and n not in cache:
+        parts = parts_of(cell)
+        for i, part in enumerate(parts):
+            if part.lower().startswith("wiki:"):
+                title = part[5:].strip()
+                key = cache_key(n, parts, i)
+                if cache.get(key, {}).get("from") != title:
+                    wanted[key] = [title]
+        if not cell and n not in cache:
             wanted[n] = [n, f"{n}, New Zealand", f"{n} (New Zealand)"]
 
     if wanted and not args.offline:
@@ -227,33 +240,47 @@ def main() -> None:
                 print(f"  {n}: no article with an image nearby; card keeps its gradient", file=sys.stderr)
 
     # 2. resolve every place's photo, then fetch credits for Commons files we haven't seen
-    resolved: dict[str, str] = {}
+    resolved: dict[str, list[str]] = {}
     for p in places:
         cell = p["photo_src"]
         n = p["name"]
-        if cell and not cell.lower().startswith("wiki:"):
-            # a Commons filename pasted with spaces ("Lake Pukaki 21.jpg") is the same file as the
-            # underscored form the credit lookup keys on, so normalise it here
-            resolved[n] = cell if cell.startswith("http") else cell.replace(" ", "_")
-        else:
-            resolved[n] = cache.get(n, {}).get("file", "")
+        parts = parts_of(cell)
+        files = []
+        for i, part in enumerate(parts):
+            if part.lower().startswith("wiki:"):
+                files.append(cache.get(cache_key(n, parts, i), {}).get("file", ""))
+            elif part == "-":                                   # the sheet's way of saying "no photo"
+                continue
+            else:
+                # a Commons filename pasted with spaces ("Lake Pukaki 21.jpg") is the same file as the
+                # underscored form the credit lookup keys on, so normalise it here
+                files.append(part if part.startswith("http") else part.replace(" ", "_"))
+        if not parts:
+            files = [cache.get(n, {}).get("file", "")]
+        resolved[n] = [f for f in files if f]
 
-    need_credit = sorted({f for f in resolved.values() if f and not f.startswith("http")
-                          and not cache.get("_credits", {}).get(f, {}).get("url")})
+    need_credit = sorted({f for fs in resolved.values() for f in fs if not f.startswith("http")
+                          and not (cache.get("_credits", {}).get(f, {}).get("url") and "year" in cache["_credits"][f])})
     if need_credit and not args.offline:
         cache.setdefault("_credits", {}).update(credits(need_credit))
 
     # 3. write into data.json
     with_photo = 0
     for p in places:
-        f = resolved[p["name"]]
-        p["photo"] = f
-        if f:
+        photos = []
+        for f in resolved[p["name"]]:
+            c = cache.get("_credits", {}).get(f, {}) if not f.startswith("http") else {"url": f}
+            photos.append({"file": f, "url": c.get("url", "").split("?")[0], "credit": c.get("credit", ""),
+                           "page": c.get("page", ""), "year": c.get("year", "")})
+        if photos:
             with_photo += 1
-        c = cache.get("_credits", {}).get(f, {}) if f and not f.startswith("http") else {}
-        p["photo_credit"] = c.get("credit", "")
-        p["photo_page"] = c.get("page", "")
-        p["photo_url"] = c.get("url", "").split("?")[0]
+        p["photos"] = photos
+        # the first photo also lives in the flat fields, which older readers of data.json use
+        first = photos[0] if photos else {"file": "", "url": "", "credit": "", "page": ""}
+        p["photo"] = first["file"]
+        p["photo_credit"] = first["credit"]
+        p["photo_page"] = first["page"]
+        p["photo_url"] = first["url"]
     DATA_FILE.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
 
     if json.dumps(cache, sort_keys=True) != before:
