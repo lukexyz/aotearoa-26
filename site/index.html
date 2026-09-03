@@ -212,10 +212,10 @@ a{color:var(--amber)}
 
 /* ================= BACK TO OVERVIEW ================= */
 #back{position:fixed;left:14px;bottom:14px;z-index:950;display:flex;align-items:center;gap:12px;min-height:56px;
-  padding:10px 20px 10px 14px;border-radius:14px;background:transparent;border:2.5px solid var(--coral);color:var(--coral);
+  padding:10px 20px 10px 14px;border-radius:14px;background:rgba(12,22,20,.55);backdrop-filter:blur(8px);border:2.5px solid var(--coral);color:var(--coral);
   text-align:left;line-height:1.05;text-shadow:0 1px 6px rgba(0,0,0,.9);transition:.15s;
   filter:drop-shadow(0 4px 14px rgba(0,0,0,.6))}
-#back:hover{background:rgba(232,100,58,.18)}
+#back:hover{background:rgba(232,100,58,.28)}
 #back .bk{flex:0 0 auto;display:block}
 #back b{display:block;font-size:19px;font-weight:900;letter-spacing:.08em}
 #back small{display:block;margin-top:3px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.9}
@@ -807,11 +807,14 @@ window.TRIP_DATA = /*__TRIP_DATA__*/null;
   document.getElementById('back').onclick = () => render(0);
   /* the button appears on any day view, and on the overview as soon as you've zoomed into something */
   let homeZoom = null;                          // the overview's fitted zoom, set by fit()
+  let popupOpen = false;                        // a pin's popup counts as having clicked into something
   function showBack() {
     const zoomedIn = cur === 0 && homeZoom !== null && map.getZoom() > homeZoom + .4;
-    document.getElementById('back').hidden = !(cur > 0 || zoomedIn);
+    document.getElementById('back').hidden = !(cur > 0 || zoomedIn || popupOpen);
   }
   map.on('zoomend', showBack);
+  map.on('popupopen', () => { popupOpen = true; showBack(); });
+  map.on('popupclose', () => { popupOpen = false; showBack(); });
   document.addEventListener('keydown', e => {
     if (e.key === 'ArrowRight') render(cur + 1);
     if (e.key === 'ArrowLeft') render(cur - 1);
