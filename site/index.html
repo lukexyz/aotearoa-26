@@ -311,7 +311,11 @@ window.TRIP_DATA = /*__TRIP_DATA__*/null;
 
   const D = window.TRIP_DATA;
   const briefEl = document.getElementById('brief');
-  if (!D || !D.days || !D.days.length) { briefEl.innerHTML = '<div class="brief-kick">No itinerary data yet</div>'; return; }
+  if (!D || !D.days || !D.days.length) {
+    briefEl.innerHTML = '<div class="brief-kick">No itinerary data yet</div><p class="brief-notes">This is the template in <b>site/</b>. '
+      + 'Run <code>python scripts/build.py</code> and open <b>dist/index.html</b>, which has the sheet data built in.</p>';
+    return;
+  }
 
   /* ---- data ---- */
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
