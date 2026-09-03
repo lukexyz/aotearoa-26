@@ -31,6 +31,10 @@
   "file": "Hokitika_Township.jpg",
   "from": "Hokitika"
  },
+ "Hokitika Gorge": {
+  "file": "TWC_Hokitika_Gorge_•_Stewart_Nimmo_•_MRD_10.jpg",
+  "from": "Hokitika Gorge"
+ },
  "Kaikoura": {
   "file": "Kaikōura_seen_from_Kaikōura_Peninsula.jpg",
   "from": "Kaikōura"
@@ -190,11 +194,29 @@
    "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b6/Lake_Pukaki_21.jpg/960px-Lake_Pukaki_21.jpg",
    "year": "2017"
   },
+  "Lake_Wakatipu_from_Queenstown_gondola.jpg": {
+   "credit": "Avenue · CC BY-SA 3.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Lake_Wakatipu_from_Queenstown_gondola.jpg",
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cc/Lake_Wakatipu_from_Queenstown_gondola.jpg/960px-Lake_Wakatipu_from_Queenstown_gondola.jpg",
+   "year": "2009"
+  },
   "Mapua_new_zealand.jpg": {
    "credit": "Tom Collett · Public domain",
    "page": "https://commons.wikimedia.org/wiki/File:Mapua_new_zealand.jpg",
    "url": "https://upload.wikimedia.org/wikipedia/commons/d/dd/Mapua_new_zealand.jpg",
    "year": "2006"
+  },
+  "Milford_Sound_(50698148846).jpg": {
+   "credit": "Andy Maguire from London, UK · CC BY 2.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Milford_Sound_(50698148846).jpg",
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/22/Milford_Sound_%2850698148846%29.jpg/960px-Milford_Sound_%2850698148846%29.jpg",
+   "year": "2020"
+  },
+  "Milford_Sound_-_Piopiotahi,_Part_II_-_MilfordSound8969.jpg": {
+   "credit": "lumoplank · CC0",
+   "page": "https://commons.wikimedia.org/wiki/File:Milford_Sound_-_Piopiotahi,_Part_II_-_MilfordSound8969.jpg",
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a1/Milford_Sound_-_Piopiotahi%2C_Part_II_-_MilfordSound8969.jpg/960px-Milford_Sound_-_Piopiotahi%2C_Part_II_-_MilfordSound8969.jpg",
+   "year": "2026"
   },
   "NZ310315_Kaiteriteri_01.jpg": {
    "credit": "Oren Rozen · CC BY-SA 3.0",
@@ -225,6 +247,12 @@
    "page": "https://commons.wikimedia.org/wiki/File:Queenstown_1_(8168013172).jpg",
    "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c9/Queenstown_1_%288168013172%29.jpg/960px-Queenstown_1_%288168013172%29.jpg",
    "year": "2008"
+  },
+  "TWC_Hokitika_Gorge_•_Stewart_Nimmo_•_MRD_10.jpg": {
+   "credit": "Stewart Nimmo · CC BY-SA 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:TWC_Hokitika_Gorge_%E2%80%A2_Stewart_Nimmo_%E2%80%A2_MRD_10.jpg",
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4d/TWC_Hokitika_Gorge_%E2%80%A2_Stewart_Nimmo_%E2%80%A2_MRD_10.jpg/960px-TWC_Hokitika_Gorge_%E2%80%A2_Stewart_Nimmo_%E2%80%A2_MRD_10.jpg",
+   "year": "2017"
   },
   "Te_Anau_and_Murchison_Mountains.jpg": {
    "credit": "Tim Burgess · CC BY-SA 4.0",
