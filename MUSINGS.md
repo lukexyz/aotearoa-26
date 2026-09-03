@@ -215,8 +215,11 @@ What the page derives from the three tabs, so nobody has to type it twice:
 - Stats on the overview (towns, total driving hours) are summed from
   `drive_time` strings like `4h30`. Anything else parses as zero.
 
-Basemaps: Esri satellite with CARTO labels is the default, with CARTO Light,
-Voyager and OpenTopoMap behind a switcher. The pick is saved in
+Basemaps: Esri satellite with CARTO labels is the default, with OpenTopoMap
+behind a switcher. (CARTO Light and Voyager were there too until 2026-09-03;
+Luke saw them fail in the browser, apparently wanting an API key, so they're
+gone. The CARTO label overlay on the satellite view is the same provider and
+is the thing to watch if labels ever vanish.) The pick is saved in
 `localStorage`. `DEFAULT_BASEMAP` at the top of the script is the one
 constant to flip once Luke has chosen.
 

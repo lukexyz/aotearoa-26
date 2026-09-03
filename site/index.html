@@ -279,7 +279,7 @@ window.TRIP_DATA = /*__TRIP_DATA__*/null;
   'use strict';
 
   /* ---- knobs ---- */
-  const DEFAULT_BASEMAP = 'satellite';        // 'satellite' | 'light' | 'voyager' | 'topo'  (flip at the end)
+  const DEFAULT_BASEMAP = 'satellite';        // 'satellite' | 'topo'  (flip at the end)
   const BASEMAP_KEY = 'aotearoa-basemap';
   const MAX_CARDS = 4;
   const LEG_COLOURS = ['#E8643A', '#F2B33D', '#3FB4A6', '#7DA4E8', '#C77DFF', '#8FD0A8', '#f59a7a'];
@@ -400,10 +400,6 @@ window.TRIP_DATA = /*__TRIP_DATA__*/null;
         { maxZoom: 17, attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics' }),
       L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png',
         { maxZoom: 19, subdomains: 'abcd', opacity: .85, attribution: cartoAttr })]) },
-    light: { label: 'Light', layer: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-      { maxZoom: 19, subdomains: 'abcd', attribution: cartoAttr }) },
-    voyager: { label: 'Voyager', layer: L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-      { maxZoom: 19, subdomains: 'abcd', attribution: cartoAttr }) },
     topo: { label: 'Topo', layer: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
       { maxZoom: 17, subdomains: 'abc', attribution: '&copy; <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA) &copy; OpenStreetMap' }) },
   };

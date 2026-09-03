@@ -9,7 +9,7 @@ Decisions already made:
   nightly and on demand. Bookings tab never leaves the sheet.
 - Public repo, public site, `noindex`. No encryption, no auth.
 - Full-bleed satellite map by default, Dolomites layout, with a basemap
-  switcher (Satellite / CARTO Light / Voyager / OpenTopoMap). Luke picks the
+  switcher (Satellite / OpenTopoMap; CARTO Light and Voyager dropped 2026-09-03). Luke picks the
   final default at the end.
 - Data is inlined into the page at build time so it works with no signal.
 
@@ -58,8 +58,9 @@ Layout:
 - [x] Full-bleed Leaflet map (cdnjs 1.9.4), top bar with brand, day nav,
       basemap switcher. Cream/amber palette from the v1 image, dark chrome
       from the Dolomites site.
-- [x] Basemaps: Esri World Imagery + CARTO label overlay (default), CARTO
-      Light, CARTO Voyager, OpenTopoMap. Switcher in the top-right. Choice
+- [x] Basemaps: Esri World Imagery + CARTO label overlay (default) and
+      OpenTopoMap. Switcher in the top-right. (CARTO Light and Voyager were
+      dropped 2026-09-03: they fail in the browser without an API key.) Choice
       remembered in `localStorage`. One `DEFAULT_BASEMAP` constant to flip
       later.
 - [x] Day nav: Overview + one chip per day (day number, date if set), prev/next

@@ -68,7 +68,7 @@ with `--dump`, and is what CI builds from if the sheet secrets are missing.
 ## The page
 
 One file, `site/index.html`. Leaflet map with a basemap switcher (satellite,
-CARTO Light, Voyager, OpenTopoMap; the choice is remembered per browser).
+OpenTopoMap; the choice is remembered per browser).
 Overview shows the whole loop with a pin per town; each day shows the drive
 along the actual road, numbered pins for the stops that have a `place`,
 tonight's town with a halo, and photo cards on the right. The drive is routed
