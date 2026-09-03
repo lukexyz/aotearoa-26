@@ -130,6 +130,10 @@ a{color:var(--amber)}
 .card-tag{position:absolute;right:8px;top:8px;background:rgba(12,22,20,.85);color:var(--coral2);font-size:9px;
   font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding:3px 7px;border-radius:5px;z-index:2;
   border:1px solid rgba(232,100,58,.5)}
+.card-cred{position:absolute;right:6px;bottom:6px;z-index:2;font-size:8.5px;color:rgba(244,239,231,.55);
+  background:rgba(12,22,20,.6);padding:2px 5px;border-radius:4px;text-decoration:none;max-width:55%;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card-cred:hover{color:var(--amber)}
 .card-meta{padding:8px 11px 10px}
 .card-blurb{font-size:11.5px;color:#bccbc5;line-height:1.45}
 .card-chips{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
@@ -302,6 +306,13 @@ window.TRIP_DATA = /*__TRIP_DATA__*/null;
   const photoUrl = f => !f ? '' : /^https?:\/\//.test(f) ? f
     : 'https://commons.wikimedia.org/wiki/Special:FilePath/' + encodeURIComponent(f) + '?width=760';
   const iconFor = t => ICONS[(t || '').trim().toLowerCase()] || '📍';
+  /* "📷 Artist · CC BY-SA 4.0" linking to the Commons file page, when photos.py found one */
+  const credit = (p, cls) => {
+    if (!p.photo || !(p.photo_credit || p.photo_page)) return '';
+    const text = '📷 ' + esc(p.photo_credit || 'Wikimedia Commons');
+    return p.photo_page ? `<a class="${cls}" href="${esc(p.photo_page)}" target="_blank" rel="noopener" title="Photo credit" onclick="event.stopPropagation()">${text}</a>`
+                        : `<span class="${cls}">${text}</span>`;
+  };
   const mapsUrl = at => `https://www.google.com/maps/search/?api=1&query=${at[0]},${at[1]}`;
 
   const isoRe = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -450,7 +461,7 @@ window.TRIP_DATA = /*__TRIP_DATA__*/null;
     const img = `<div class="pop-img">${photo ? `<img src="${esc(photo)}" alt="" loading="lazy" onerror="this.style.display='none'">` : ''}
       <div class="pop-cap"><div class="pop-kick">${esc(kick || p.kind || '')}</div><h3>${esc(p.name)}</h3></div></div>`;
     const rows = (stops || []).map(s => `<div class="pop-row"><span class="ico">${iconFor(s.type)}</span><span>${s.link ? `<a href="${esc(s.link)}" target="_blank" rel="noopener">${esc(s.name)} ↗</a>` : esc(s.name)}${s.notes ? ` <span style="color:#7f9790">· ${esc(s.notes)}</span>` : ''}</span></div>`).join('');
-    const cred = photo && !/^https?:\/\//.test(p.photo) ? `<div class="pop-cred">Photo: Wikimedia Commons</div>` : '';
+    const cred = photo ? `<div class="pop-cred">${credit(p, '') || 'Photo: Wikimedia Commons'}</div>` : '';
     return `<div class="pop">${img}<div class="pop-body">${p.blurb ? `<p>${esc(p.blurb)}</p>` : ''}${rows}
       <a class="pop-btn" href="${mapsUrl(p.at)}" target="_blank" rel="noopener">Maps ↗</a>${cred}</div></div>`;
   }
@@ -565,6 +576,7 @@ window.TRIP_DATA = /*__TRIP_DATA__*/null;
           ${c.tag ? `<div class="card-tag">${esc(c.tag)}</div>` : ''}
           ${photo ? `<img src="${esc(photo)}" alt="" loading="lazy" onerror="this.style.display='none'">` : ''}
           <div class="card-name">${esc(c.name)}</div>
+          ${credit(p, 'card-cred')}
         </div>
         <div class="card-meta">${p.blurb ? `<div class="card-blurb">${esc(p.blurb)}</div>` : ''}
           ${c.chips.length ? `<div class="card-chips">${c.chips.map(t => `<span class="card-chip">${esc(t)}</span>`).join('')}</div>` : ''}</div>`;

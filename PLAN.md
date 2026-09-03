@@ -114,6 +114,14 @@ Goal: driving legs trace SH6/SH8/SH1 instead of cutting across the Alps.
 Done when: the Day 7 line goes over Haast Pass and says roughly 6h30 without
 anyone typing it. (It does: OSRM says 6h55 and 509 km.)
 
+## Phase 3b — Photos without hunting  ✅ done 2026-09-03
+
+- [x] `scripts/photos.py`: Wikipedia lead image per place, exact title then
+      search, 40 km coordinate check, cached in `data/photos.json`. Sheet
+      `photo` cell overrides (`wiki:Title`, Commons filename, URL, `-`).
+- [x] Credit + licence link on cards and popups from Commons extmetadata.
+- [x] `--preview` contact sheet; README "Photos" explainer.
+
 ## Phase 4 — Live bits
 
 - [ ] Port `weather.js`: Open-Meteo forecast for the current day's town,

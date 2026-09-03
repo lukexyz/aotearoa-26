@@ -45,6 +45,9 @@ jobs:
       - name: Route the drives along roads (OSRM, cached in data/routes.json)
         run: python scripts/routes.py
 
+      - name: Find a photo for each place (Wikipedia, cached in data/photos.json)
+        run: python scripts/photos.py
+
       - name: Build site
         run: python scripts/build.py
 

@@ -93,6 +93,8 @@ column ever appears in the `days` tab. Belt and braces against someone
 | `scripts/fetch_sheet.py`      | sheet or CSV → `site/data.json`                   |
 | `scripts/routes.py`           | adds OSRM road geometry to `data.json`            |
 | `data/routes.json`            | cache of OSRM answers, keyed by coordinates       |
+| `scripts/photos.py`           | finds a Wikipedia photo per place → `data.json`   |
+| `data/photos.json`            | cache of photo picks and credits, keyed by name   |
 | `scripts/build.py`            | `site/` + data → `dist/`                          |
 | `site/index.html`             | the page: Leaflet map, day nav, brief, cards      |
 | `.github/workflows/build.yml` | nightly + manual build and Pages deploy           |
@@ -160,8 +162,8 @@ page changes. Then reverted.
 - [x] Dates: in the sheet, 25 Oct to 4 Nov. Only day 1 strictly needs one now.
 - [ ] Decide days 1 and 2: straight to Wanaka (current, v1) or two
       Christchurch nights first. Open question 3 above.
-- [ ] `places.photo`: a Wikimedia Commons filename per sleeping town at
-      least. Blank cells just mean no photo card.
+- [x] `places.photo`: now automatic (2026-09-03). Fill the cell only to
+      override; see README → Photos.
 - [ ] Sanity-check the 21 sets of coordinates against Google Maps; they were
       typed from memory.
 - [ ] `bookings` rows as things get booked. Never leaves the sheet.
@@ -291,3 +293,32 @@ drive. Dashed spurs from `stops.type` are the last Phase 3 item.
 
 Tested: local build, `node --check` on the inlined script, headless
 screenshots of the overview, day 7 (over Haast Pass) and day 10.
+
+## 2026-09-03: Photos, found rather than typed
+
+`scripts/photos.py` runs after routes: for each place with a blank `photo`
+cell it fetches the lead image of the English Wikipedia article. Exact titles
+first (`Name`, `Name, New Zealand`, `Name (New Zealand)`), then a search, and
+a candidate only counts if the article's coordinates are within 40 km of the
+place. Picks and Commons credit lines are cached in `data/photos.json`.
+
+Three lessons from the first run, all now in the code:
+
+- **`pilimit` defaults to 1.** Ask the API for 40 titles with
+  `prop=pageimages` and only the first page gets an image; the rest look
+  imageless and fall through to search, which is how Haast Pass became the
+  township of Haast and Gibbston became Queenstown. `pilimit=max` and
+  `colimit=max` fixed it.
+- **Wikipedia 429s a fast burst** even with a proper User-Agent. One second
+  between requests, backoff to a minute, and batching (two title requests for
+  the whole trip) keeps it civil. A failed lookup is never cached as "nothing
+  found", it's just retried next build.
+- **The script must be re-runnable on its own output.** First version wrote
+  the pick into `photo`, then treated that as a sheet override on the second
+  run. The sheet's cell now lives in `photo_src`.
+
+Lead images of town articles are often a building (Renwick's post office,
+Westport's municipal chambers). For a road trip page the sheet's `wiki:`
+override is the fix: `wiki:Doubtful Sound` for Manapouri, `wiki:Pancake Rocks`
+for Punakaiki, and so on. The README's Photos section is the explainer for
+whoever changes the sheet.

@@ -4,3 +4,4 @@ site/data.json
 __pycache__/
 *.json.key
 service-account*.json
+photos-preview.html
