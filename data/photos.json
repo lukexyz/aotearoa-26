@@ -59,6 +59,10 @@
   "file": "Nelson_New_Zealand.jpg",
   "from": "Nelson, New Zealand"
  },
+ "Pororari River Track": {
+  "file": "Pororari_River_MRD_02.jpg",
+  "from": "Pororari River"
+ },
  "Punakaiki": {
   "file": "00_1273_Pancake_Rocks_-_Paparoa-Nationalpark_(New_Zealand).jpg",
   "from": "Pancake Rocks and Blowholes"
@@ -177,6 +181,11 @@
    "credit": "CC BY 2.5",
    "page": "https://commons.wikimedia.org/wiki/File:On_Lake_Te_Anau.jpg",
    "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8d/On_Lake_Te_Anau.jpg/960px-On_Lake_Te_Anau.jpg"
+  },
+  "Pororari_River_MRD_02.jpg": {
+   "credit": "Mike Dickison · CC BY 4.0",
+   "page": "https://commons.wikimedia.org/wiki/File:Pororari_River_MRD_02.jpg",
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2c/Pororari_River_MRD_02.jpg/960px-Pororari_River_MRD_02.jpg"
   },
   "Queenstown_1_(8168013172).jpg": {
    "credit": "Bernard Spragg. NZ from Christchurch, New Zealand · CC0",
