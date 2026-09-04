@@ -78,6 +78,9 @@ a{color:var(--amber)}
 #brief::-webkit-scrollbar-thumb{background:#33504a;border-radius:8px}
 .brief-kick{font-size:9.5px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--amber)}
 .brief-title{margin:4px 0 6px;font-size:18px;font-weight:800;letter-spacing:-.015em;line-height:1.2}
+/* the day's header block is a quiet way back: no button, just click the title and you're on the overview */
+.brief-head{cursor:pointer;margin:0 -8px;padding:2px 8px;border-radius:10px;transition:background .15s}
+.brief-head:hover{background:rgba(255,255,255,.045)}
 .brief-route{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px;color:var(--soft);font-weight:600}
 .brief-route .arr{color:var(--muted)}
 .brief-chip{font-size:10px;font-weight:800;letter-spacing:.05em;background:rgba(63,180,166,.18);color:#8fe0d4;
@@ -807,14 +810,15 @@ window.TRIP_DATA = /*__TRIP_DATA__*/null;
         <span><span class="nm">${stopName(s, d)}</span>${c ? `<span class="sp">${c.i}</span>` : ''}${isBooked(s) && BOOKINGS_URL ? `<a class="sp sp-bk" href="${BOOKINGS_URL}" target="_blank" rel="noopener" title="Booking details in the sheet">booked ↗</a>` : ''}
         ${s.notes ? `<div class="sn">${esc(s.notes)}</div>` : ''}</span></li>`;
     }).join('');
-    briefEl.innerHTML = `<div class="brief-kick">${esc(kick)}</div>
+    briefEl.innerHTML = `<div class="brief-head" id="brief-head" title="Back to the whole trip"><div class="brief-kick">${esc(kick)}</div>
       <h2 class="brief-title">${esc(d.title || `${d.from} → ${d.to}`)}</h2>
       <div class="brief-route">${route}${driveText(d) ? `<span class="brief-chip">🚗 ${driveText(d)}</span>` : ''}</div>
       <div class="brief-wx" id="brief-wx" hidden></div>
-      ${d.notes ? `<p class="brief-notes">${esc(d.notes)}</p>` : ''}
+      ${d.notes ? `<p class="brief-notes">${esc(d.notes)}</p>` : ''}</div>
       ${stops ? `<div class="brief-h">Stops</div><ul class="brief-stops">${stops}</ul>` : ''}
       ${d.to ? `<div class="brief-bed">🛏 Sleeping in <b>${esc(d.to)}</b>${BOOKINGS_URL ? ` · <a href="${BOOKINGS_URL}" target="_blank" rel="noopener">booking details ↗</a>` : ''}</div>` : ''}
       ${foot}`;
+    document.getElementById('brief-head').onclick = () => render(0);
     briefEl.querySelectorAll('.brief-stop.has-place').forEach(li => li.onclick = e => {
       if (e.target.closest('a')) return;
       const c = activeCards.find(x => x.i === +li.dataset.i); if (!c) return;
